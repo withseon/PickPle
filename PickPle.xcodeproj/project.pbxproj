@@ -7,20 +7,33 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2CDCF4432DCE2659007389FD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF4402DCE2659007389FD /* ContentView.swift */; };
 		2CDCF4442DCE2659007389FD /* PickPleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF4412DCE2659007389FD /* PickPleApp.swift */; };
 		2CDCF4452DCE2659007389FD /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF43D2DCE2659007389FD /* Preview Assets.xcassets */; };
 		2CDCF4462DCE2659007389FD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF43F2DCE2659007389FD /* Assets.xcassets */; };
 		2CDCF44A2DCE2730007389FD /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF4492DCE2730007389FD /* .gitignore */; };
+		2CDCF52B2DCF3798007389FD /* Pretendard-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF5282DCF3798007389FD /* Pretendard-Bold.ttf */; };
+		2CDCF52C2DCF3798007389FD /* Pretendard-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF52A2DCF3798007389FD /* Pretendard-Regular.ttf */; };
+		2CDCF52D2DCF3798007389FD /* Pretendard-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF5292DCF3798007389FD /* Pretendard-Medium.ttf */; };
+		2CDCF52F2DCF3BE1007389FD /* JalnanGothicTTF.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF52E2DCF3BE1007389FD /* JalnanGothicTTF.ttf */; };
+		2CDCF5F92DCF40CB007389FD /* Font+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF5F82DCF40CB007389FD /* Font+.swift */; };
+		2CDCF6562DCF5F99007389FD /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF6552DCF5F99007389FD /* SplashView.swift */; };
+		2CDCF6592DCF66F9007389FD /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF6582DCF66F9007389FD /* MainTabView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2CDCF42B2DCE2624007389FD /* PickPle.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PickPle.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2CDCF43D2DCE2659007389FD /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2CDCF43F2DCE2659007389FD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		2CDCF4402DCE2659007389FD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		2CDCF4412DCE2659007389FD /* PickPleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickPleApp.swift; sourceTree = "<group>"; };
 		2CDCF4492DCE2730007389FD /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		2CDCF5282DCF3798007389FD /* Pretendard-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pretendard-Bold.ttf"; sourceTree = "<group>"; };
+		2CDCF5292DCF3798007389FD /* Pretendard-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pretendard-Medium.ttf"; sourceTree = "<group>"; };
+		2CDCF52A2DCF3798007389FD /* Pretendard-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pretendard-Regular.ttf"; sourceTree = "<group>"; };
+		2CDCF52E2DCF3BE1007389FD /* JalnanGothicTTF.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = JalnanGothicTTF.ttf; sourceTree = "<group>"; };
+		2CDCF5302DCF3C49007389FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2CDCF5F82DCF40CB007389FD /* Font+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+.swift"; sourceTree = "<group>"; };
+		2CDCF6552DCF5F99007389FD /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		2CDCF6582DCF66F9007389FD /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,10 +75,12 @@
 		2CDCF4422DCE2659007389FD /* PickPle */ = {
 			isa = PBXGroup;
 			children = (
+				2CDCF5302DCF3C49007389FD /* Info.plist */,
 				2CDCF4482DCE2667007389FD /* App */,
+				2CDCF5FA2DCF49C4007389FD /* Common */,
+				2CDCF5FC2DCF5E53007389FD /* Present */,
+				2CDCF5102DCF2211007389FD /* Resource */,
 				2CDCF43E2DCE2659007389FD /* Preview Content */,
-				2CDCF43F2DCE2659007389FD /* Assets.xcassets */,
-				2CDCF4402DCE2659007389FD /* ContentView.swift */,
 			);
 			path = PickPle;
 			sourceTree = "<group>";
@@ -76,6 +91,51 @@
 				2CDCF4412DCE2659007389FD /* PickPleApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		2CDCF5102DCF2211007389FD /* Resource */ = {
+			isa = PBXGroup;
+			children = (
+				2CDCF5272DCF369F007389FD /* Font */,
+				2CDCF43F2DCE2659007389FD /* Assets.xcassets */,
+			);
+			path = Resource;
+			sourceTree = "<group>";
+		};
+		2CDCF5272DCF369F007389FD /* Font */ = {
+			isa = PBXGroup;
+			children = (
+				2CDCF52E2DCF3BE1007389FD /* JalnanGothicTTF.ttf */,
+				2CDCF5282DCF3798007389FD /* Pretendard-Bold.ttf */,
+				2CDCF5292DCF3798007389FD /* Pretendard-Medium.ttf */,
+				2CDCF52A2DCF3798007389FD /* Pretendard-Regular.ttf */,
+			);
+			path = Font;
+			sourceTree = "<group>";
+		};
+		2CDCF5FA2DCF49C4007389FD /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				2CDCF5FB2DCF49D0007389FD /* Extension */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		2CDCF5FB2DCF49D0007389FD /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+				2CDCF5F82DCF40CB007389FD /* Font+.swift */,
+			);
+			path = Extension;
+			sourceTree = "<group>";
+		};
+		2CDCF5FC2DCF5E53007389FD /* Present */ = {
+			isa = PBXGroup;
+			children = (
+				2CDCF6552DCF5F99007389FD /* SplashView.swift */,
+				2CDCF6582DCF66F9007389FD /* MainTabView.swift */,
+			);
+			path = Present;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -139,6 +199,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2CDCF52B2DCF3798007389FD /* Pretendard-Bold.ttf in Resources */,
+				2CDCF52F2DCF3BE1007389FD /* JalnanGothicTTF.ttf in Resources */,
+				2CDCF52C2DCF3798007389FD /* Pretendard-Regular.ttf in Resources */,
+				2CDCF52D2DCF3798007389FD /* Pretendard-Medium.ttf in Resources */,
 				2CDCF4452DCE2659007389FD /* Preview Assets.xcassets in Resources */,
 				2CDCF44A2DCE2730007389FD /* .gitignore in Resources */,
 				2CDCF4462DCE2659007389FD /* Assets.xcassets in Resources */,
@@ -152,8 +216,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2CDCF4432DCE2659007389FD /* ContentView.swift in Sources */,
+				2CDCF5F92DCF40CB007389FD /* Font+.swift in Sources */,
 				2CDCF4442DCE2659007389FD /* PickPleApp.swift in Sources */,
+				2CDCF6562DCF5F99007389FD /* SplashView.swift in Sources */,
+				2CDCF6592DCF66F9007389FD /* MainTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,11 +356,12 @@
 				DEVELOPMENT_TEAM = TZ98TZ527N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PickPle/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 16;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -324,11 +391,12 @@
 				DEVELOPMENT_TEAM = TZ98TZ527N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PickPle/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 16;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
