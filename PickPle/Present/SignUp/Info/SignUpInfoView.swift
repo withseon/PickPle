@@ -18,8 +18,12 @@ struct SignUpInfoView: View {
                 .frame(height: 100)
             VStack(spacing: 20) {
                 HStack {
-                    Text("회원 정보를 입력해주세요.")
-                        .font(.pretendard(.title))
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("회원 정보를 입력해주세요.")
+                            .font(.pretendard(.title))
+                        Text("닉네임은 특수문자(.,?*-@) 한 글자로 구성할 수 없습니다.")
+                            .font(.pretendard(.caption1))
+                    }
                     Spacer()
                 }
                 VStack(alignment: .leading) {
@@ -29,7 +33,8 @@ struct SignUpInfoView: View {
                         "닉네임을 입력해주세요",
                         text: $nickname,
                         strokeColor: viewModel.output.nicknameErrorMassage.isEmpty ? .gray30 : .errorRed,
-                        errorMessage: viewModel.output.nicknameErrorMassage
+                        errorMessage: viewModel.output.nicknameErrorMassage,
+                        limit: 15
                     )
                     .onChange(of: nickname) { newValue in
                         viewModel.input.nickname = newValue

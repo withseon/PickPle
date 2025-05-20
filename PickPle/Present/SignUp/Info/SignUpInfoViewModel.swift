@@ -18,7 +18,7 @@ final class SignUpInfoViewModel: ViewModelType {
     }
 
     deinit {
-        print("SignUpViewModel deinit")
+        print("SignUpInfoViewModel deinit")
     }
 }
 
@@ -53,7 +53,11 @@ extension SignUpInfoViewModel {
         if text.isEmpty {
             output.nicknameErrorMassage = ""
             return false
+        } else if text.isValidNickname() {
+            output.nicknameErrorMassage = "\(input.nickname) 한 글자로 구성할 수 없습니다"
+            return false
         } else {
+            output.nicknameErrorMassage = ""
             return true
         }
     }

@@ -54,5 +54,9 @@ extension String {
         
         return (isValid, lengthValid, hasLetters, hasDigits, hasSpecial)
     }
-
+    
+    func isValidNickname() -> Bool {
+        let specialCharacters = [".", ",", "?", "*", "-", "@"]
+        return self.count == 1 && specialCharacters.contains(self)
+    }
 }
