@@ -29,36 +29,30 @@ struct SignUpPasswordView: View {
                 VStack(alignment: .leading) {
                     Text("비밀번호")
                         .font(.pretendard(.body1))
-                    SecureClearableTextField("비밀번호를 입력해주세요", text: $password)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.gray30, lineWidth: 1)
-                        )
-                        .onChange(of: password) { newValue in
-                            viewModel.input.password = newValue
-                            viewModel.action(.validatePassword)
-                        }
-                    Text(viewModel.output.passwordErrorMessage)
-                        .font(.pretendard(.caption1))
-                        .foregroundStyle(.errorRed)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    SecureClearableTextField(
+                        "비밀번호를 입력해주세요",
+                        text: $password,
+                        strokeColor: viewModel.output.passwordErrorMessage.isEmpty ? .gray30 : .errorRed,
+                        errorMessage: viewModel.output.passwordErrorMessage
+                    )
+                    .onChange(of: password) { newValue in
+                        viewModel.input.password = newValue
+                        viewModel.action(.validatePassword)
+                    }
                 }
                 VStack(alignment: .leading) {
                     Text("비밀번호 확인")
                         .font(.pretendard(.body1))
-                    SecureClearableTextField("비밀번호를 입력해주세요", text: $passwordConfirmation)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.gray30, lineWidth: 1)
-                        )
-                        .onChange(of: passwordConfirmation) { newValue in
-                            viewModel.input.passwordConfirmation = newValue
-                            viewModel.action(.confirmPassword)
-                        }
-                    Text(viewModel.output.passwordConfirmErrorMessage)
-                        .font(.pretendard(.caption1))
-                        .foregroundStyle(.errorRed)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    SecureClearableTextField(
+                        "비밀번호를 입력해주세요",
+                        text: $passwordConfirmation,
+                        strokeColor: viewModel.output.passwordConfirmErrorMessage.isEmpty ? .gray30 : .errorRed,
+                        errorMessage: viewModel.output.passwordConfirmErrorMessage
+                    )
+                    .onChange(of: passwordConfirmation) { newValue in
+                        viewModel.input.passwordConfirmation = newValue
+                        viewModel.action(.confirmPassword)
+                    }
                 }
             }
             Spacer()

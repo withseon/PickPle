@@ -15,14 +15,14 @@ extension String {
     }
     
     func isValidPassword() -> Bool {
-        let passwordRegex = #"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$"#
+        let passwordRegex = #"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,20}$"#
         let passwordPred = NSPredicate(format:"SELF MATCHES %@", passwordRegex)
         return passwordPred.evaluate(with: self)
     }
     
-    // 8자 이상인지 확인
+    // 8자 이상 20자 이하인지 확인
     private func isLengthValid() -> Bool {
-        return self.count >= 8
+        return self.count >= 8 && self.count <= 20
     }
     
     // 영문자를 포함하는지 확인

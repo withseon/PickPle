@@ -36,42 +36,34 @@ struct SignInView: View {
             
             // 입력 필드 부분
             VStack {
-                VStack {
-                    EmailTextField("이메일", text: $email)
-                        .focused($focusedField, equals: .email)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(viewModel.output.emailErrorMessage.isEmpty ? (focusedField == .email ? .blackSprout : .gray30) : .blackSprout, lineWidth: 1)
-                        )
-                        .onChange(of: email) { newValue in
-                            viewModel.input.email = newValue
-                            if !viewModel.output.emailErrorMessage.isEmpty {
-                                viewModel.action(.validateEmail)
-                            }
-                        }
-                    Text(viewModel.output.emailErrorMessage)
-                        .font(.pretendard(.caption1))
-                        .foregroundStyle(.blackSprout)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                EmailTextField(
+                    "이메일",
+                    text: $email,
+                    strokeColor: viewModel.output.emailErrorMessage.isEmpty ?
+                    (focusedField == .email ? .blackSprout : .gray30) : .blackSprout,
+                    errorMessage: viewModel.output.emailErrorMessage
+                )
+                .focused($focusedField, equals: .email)
+                .onChange(of: email) { newValue in
+                    viewModel.input.email = newValue
+                    if !viewModel.output.emailErrorMessage.isEmpty {
+                        viewModel.action(.validateEmail)
+                    }
                 }
                 
-                VStack {
-                    SecureClearableTextField("비밀번호", text: $password)
-                        .focused($focusedField, equals: .password)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(viewModel.output.passwordErrorMessage.isEmpty ? (focusedField == .password ? .blackSprout : .gray30) : .blackSprout, lineWidth: 1)
-                        )
-                        .onChange(of: password) { newValue in
-                            viewModel.input.password = newValue
-                            if !viewModel.output.passwordErrorMessage.isEmpty {
-                                viewModel.action(.validatePassword)
-                            }
-                        }
-                    Text(viewModel.output.passwordErrorMessage)
-                        .font(.pretendard(.caption1))
-                        .foregroundStyle(.blackSprout)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                SecureClearableTextField(
+                    "비밀번호",
+                    text: $password,
+                    strokeColor: viewModel.output.passwordErrorMessage.isEmpty ?
+                    (focusedField == .password ? .blackSprout : .gray30) : .blackSprout,
+                    errorMessage: viewModel.output.passwordErrorMessage
+                )
+                .focused($focusedField, equals: .password)
+                .onChange(of: password) { newValue in
+                    viewModel.input.password = newValue
+                    if !viewModel.output.passwordErrorMessage.isEmpty {
+                        viewModel.action(.validatePassword)
+                    }
                 }
             }
             

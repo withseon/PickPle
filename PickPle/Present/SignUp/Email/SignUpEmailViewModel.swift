@@ -64,7 +64,7 @@ extension SignUpEmailViewModel {
     
     private func isEmailAlreadyRegistered() -> Bool {
         // TODO: 이메일 중복 확인
-        return true
+        return false
     }
 }
 

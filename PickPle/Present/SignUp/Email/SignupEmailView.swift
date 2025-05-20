@@ -24,19 +24,16 @@ struct SignupEmailView: View {
                 VStack(alignment: .leading) {
                     Text("이메일(아이디)")
                         .font(.pretendard(.body1))
-                    EmailTextField("이메일을 입력해주세요", text: $email)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.gray30, lineWidth: 1)
-                        )
-                        .onChange(of: email) { newValue in
-                            viewModel.input.email = newValue
-                            viewModel.action(.validateEmail)
-                        }
-                    Text(viewModel.output.emailErrorMessage)
-                        .font(.pretendard(.caption1))
-                        .foregroundStyle(.errorRed)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    EmailTextField(
+                        "이메일을 입력해주세요",
+                        text: $email,
+                        strokeColor: viewModel.output.emailErrorMessage.isEmpty ? .gray30 : .errorRed, 
+                        errorMessage: viewModel.output.emailErrorMessage
+                    )
+                    .onChange(of: email) { newValue in
+                        viewModel.input.email = newValue
+                        viewModel.action(.validateEmail)
+                    }
                 }
             }
             Spacer()

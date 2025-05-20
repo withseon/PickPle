@@ -8,39 +8,56 @@
 import SwiftUI
 
 struct EmailTextField: View {
-    var placeholder: String
+    private var placeholder: String
     @Binding var text: String
+    private var strokeColor: Color
+    private var errorMessage: String
+    
     @State private var fieldText = ""
     @FocusState private var isFocused: Bool
     
-    init(_ placeholder: String, text: Binding<String>) {
+    init(
+        _ placeholder: String,
+        text: Binding<String>,
+        strokeColor: Color = .gray30,
+        errorMessage: String = ""
+    ) {
         self.placeholder = placeholder
         self._text = text
+        self.strokeColor = strokeColor
+        self.errorMessage = errorMessage
     }
     
     var body: some View {
-        HStack {
-            TextField(placeholder, text: $fieldText)
-                .clearable(text: $fieldText)
-                .focused($isFocused)
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
-                .tint(Color(.label))
-                .onChange(of: fieldText) { newValue in
-                    let noSpacesText = newValue.replacingOccurrences(of: "\\s", with: "", options: .regularExpression).lowercased()
-                    if noSpacesText != newValue {
-                        fieldText = noSpacesText
+        VStack(spacing: 4) {
+            HStack {
+                TextField(placeholder, text: $fieldText)
+                    .clearable(text: $fieldText)
+                    .focused($isFocused)
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+                    .tint(Color(.label))
+                    .onChange(of: fieldText) { newValue in
+                        let noSpacesText = newValue.replacingOccurrences(of: "\\s", with: "", options: .regularExpression).lowercased()
+                        if noSpacesText != newValue {
+                            fieldText = noSpacesText
+                        }
+                        text = fieldText
                     }
-                    text = fieldText
-                }
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isFocused ? strokeColor : .gray30, lineWidth: 1)
+            )
+            .animation(.easeInOut(duration: 0.2), value: isFocused)
+            
+            Text(errorMessage)
+                .font(.pretendard(.caption1))
+                .foregroundStyle(strokeColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 12)
-        .frame(height: 44)
-//        .overlay(
-//            RoundedRectangle(cornerRadius: 8)
-//                .stroke(isFocused ? .blackSprout : .gray30, lineWidth: 1)
-//        )
-        .animation(.easeInOut(duration: 0.2), value: isFocused)
     }
 }
 

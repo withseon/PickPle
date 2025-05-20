@@ -44,6 +44,7 @@ extension SignInViewModel {
 
     func transform() {
         input.validateEmailTrigger
+            .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self else { return }
                 validateEmail()
@@ -51,6 +52,7 @@ extension SignInViewModel {
             .store(in: &cancellables)
         
         input.validatePasswordTrigger
+            .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self else { return }
                 validatePassword()
@@ -69,7 +71,7 @@ extension SignInViewModel {
                         .send(.email)
                 } else if !validatePassword {
                     output.setFocusState
-                        .send(.password)
+                        .send(output.passwordErrorMessage.isEmpty ? nil : .password)
                 } else {
                     output.setFocusState
                         .send(nil)
