@@ -12,6 +12,7 @@ struct SecureClearableTextField: View {
     @Binding var text: String
     private var strokeColor: Color
     private var errorMessage: String
+    private let limit: Int?
     
     @State private var fieldText = ""
     @State private var isSecured: Bool = true
@@ -21,12 +22,14 @@ struct SecureClearableTextField: View {
         _ placeholder: String,
         text: Binding<String>,
         strokeColor: Color = .gray30,
-        errorMessage: String = ""
+        errorMessage: String = "",
+        limit: Int? = nil
     ) {
         self.placeholder = placeholder
         self._text = text
         self.strokeColor = strokeColor
         self.errorMessage = errorMessage
+        self.limit = limit
     }
     
     var body: some View {
@@ -47,9 +50,14 @@ struct SecureClearableTextField: View {
                 .disableAutocorrection(true)
                 .tint(Color(.label))
                 .onChange(of: fieldText) { newValue in
-                    let noSpacesText = newValue.replacingOccurrences(of: "\\s", with: "", options: .regularExpression).prefix(20)
+                    var noSpacesText = ""
+                    if let limit {
+                        noSpacesText = String(newValue.replacingOccurrences(of: "\\s", with: "", options: .regularExpression).prefix(limit))
+                    } else {
+                        noSpacesText = newValue.replacingOccurrences(of: "\\s", with: "", options: .regularExpression)
+                    }
                     if noSpacesText != newValue {
-                        fieldText = String(noSpacesText)
+                        fieldText = noSpacesText
                     }
                     text = fieldText
                 }

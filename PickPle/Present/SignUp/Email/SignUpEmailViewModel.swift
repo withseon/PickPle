@@ -39,32 +39,42 @@ extension SignUpEmailViewModel {
             .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self else { return }
-                output.nextButtonDisable = !validateEmail()
+                validateEmail { [weak self] isValid in
+                    guard let self else { return }
+                    output.nextButtonDisable = !isValid
+                }
             }
             .store(in: &cancellables)
     }
     
-    private func validateEmail() -> Bool {
+    private func validateEmail(_ completion: @escaping (Bool) -> Void) {
         if input.email.isEmpty {
             output.emailErrorMessage = ""
-            return false
+            completion(false)
         } else if !input.email.isValidEmail() {
             output.emailErrorMessage = "유효한 이메일 주소를 입력해주세요."
-            return false
+            completion(false)
         } else {
-            if isEmailAlreadyRegistered() {
-                output.emailErrorMessage = "이미 사용중인 이메일입니다."
-                return false
-            } else {
-                output.emailErrorMessage = ""
-                return true
+            isEmailAlreadyRegistered { [weak self] isAlready, message in
+                guard let self else { return }
+                output.emailErrorMessage = message
+                completion(!isAlready)
             }
         }
     }
     
-    private func isEmailAlreadyRegistered() -> Bool {
-        // TODO: 이메일 중복 확인
-        return false
+    private func isEmailAlreadyRegistered(_ completion: @escaping (Bool, String) -> Void) {
+        NetworkManager.executeFetch(target: UserRouter.validateEmail(ValidationEmailRequest(email: input.email)), responseType: MessageResponse.self, errorType: UserErrorResponse.self)
+            .sink { result in
+                switch result {
+                case .success(_):
+                    completion(false, "")
+                case .failure(let failure):
+                    completion(true, failure.message)
+                    print(failure.debugMessage)
+                }
+            }
+            .store(in: &cancellables)
     }
 }
 
