@@ -8,17 +8,16 @@
 import Foundation
 import Alamofire
 
-enum NetworkError<T: ErrorResponseType>: Error {
+enum NetworkError<E: ErrorResponseType>: Error {
     case alamofire(_ error: AFError)
-    case decoding(_ error: Error)
-    case server(error: T, statusCode: Int)
-    case decodingServer(error: Error, statusCode: Int)
+    case server(_ error: E)
+    case unknown(_ error: Error)
 }
 
 extension NetworkError {
     var message: String {
         switch self {
-        case .server(let error, _):
+        case .server(let error):
             return error.message
         default:
             return "네트워크 에러 발생"
@@ -29,12 +28,10 @@ extension NetworkError {
         switch self {
         case .alamofire(let error):
             return "❌ Network Error:: alamofire - \(error)"
-        case .decoding(let error):
-            return "❌ Network Error:: Decoding - \(error)"
-        case .server(let error, let statusCode):
-            return "❌ Network Error:: serverError(statusCode: \(statusCode) - \(error)"
-        case .decodingServer(let error, let statusCode):
-            return "❌ Network Error:: decodingServer(statusCode: \(statusCode) - \(error)"
+        case .server(let error):
+            return "❌ Network Error:: serverError - \(error)"
+        case .unknown(let error):
+            return "❌ Network Error:: Unknown - \(error)"
         }
     }
 }

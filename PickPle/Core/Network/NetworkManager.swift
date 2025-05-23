@@ -6,70 +6,40 @@
 //
 
 import Foundation
-import Combine
 import Alamofire
 
+private enum API {
+    static let session: Session = {
+        let configuration = URLSessionConfiguration.af.default
+        let apiLogger = APIEventLogger()
+        return Session(configuration: configuration, eventMonitors: [apiLogger])
+    }()
+}
+
 enum NetworkManager {
-    static func executeFetch<T: Decodable, E: Decodable>(
+    @discardableResult
+    static func executeFetch<T: Decodable, E: ErrorResponseType>(
         target: URLRequestConvertible,
         responseType: T.Type,
         errorType: E.Type
-    ) -> AnyPublisher<Result<T, NetworkError<E>>, Never> {
-        return AF.request(target, interceptor: APIRequestInterceptor())
-            .publishData()
-            .handleEvents(
-                receiveSubscription: { _ in print("구독 시작") },
-                receiveOutput: { response in
-                    if let statusCode = response.response?.statusCode {
-                        print("출력 받음: 상태 코드 \(statusCode)")
-                    }
-                },
-                receiveCompletion: { print("완료: \($0)") },
-                receiveCancel: { print("취소됨") },
-                receiveRequest: { print("요청: \($0)") }
-            )
-            .flatMap { response -> AnyPublisher<Result<T, NetworkError>, Never> in
-                if let afError = response.error {
-                    return Just(.failure(.alamofire(afError)))
-                        .eraseToAnyPublisher()
-                }
-                
-                guard let httpResponse = response.response else {
-                    return Just(.failure(.alamofire(AFError.responseValidationFailed(reason: .dataFileNil))))
-                        .eraseToAnyPublisher()
-                }
-
-                guard let data = response.data else {
-                    return Just(.failure(.alamofire(AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength))))
-                        .eraseToAnyPublisher()
-                }
-                
-                let statusCode = httpResponse.statusCode
-                
-                guard 200...299 ~= statusCode else {
-                    do {
-                        let decoder = JSONDecoder()
-                        decoder.keyDecodingStrategy = .convertFromSnakeCase
-                        let errorResult = try decoder.decode(errorType.self, from: data)
-                        return Just(.failure(.server(error: errorResult, statusCode: statusCode)))
-                            .eraseToAnyPublisher()
-                    } catch {
-                        return Just(.failure(.decodingServer(error: error, statusCode: statusCode)))
-                            .eraseToAnyPublisher()
-                    }
-                }
-                
-                do {
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let decodedData = try decoder.decode(T.self, from: data)
-                    return Just(.success(decodedData))
-                        .eraseToAnyPublisher()
-                } catch let error {
-                    return Just(.failure(.decoding(error)))
-                        .eraseToAnyPublisher()
-                }
+    ) async throws -> T {
+        let request = API.session.request(target, interceptor: APIRequestInterceptor())
+            .validate(statusCode: 200...299)
+            .serializingDecodable(T.self)
+        
+        do {
+            return try await request.value
+        } catch {
+            if let responseData = await request.response.data {
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                let errorResult = try decoder.decode(errorType.self, from: responseData)
+                throw NetworkError<E>.server(errorResult)
+            } else if let error = error as? AFError {
+                throw NetworkError<E>.alamofire(error)
+            } else {
+                throw NetworkError<E>.unknown(error)
             }
-            .eraseToAnyPublisher()
+        }
     }
 }
