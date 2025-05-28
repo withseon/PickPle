@@ -8,14 +8,12 @@
 import SwiftUI
 
 struct SignUpInfoView: View {
-    @StateObject var viewModel: SignUpInfoViewModel
+    @ObservedObject var viewModel: SignUpViewModel
     @State var nickname = ""
     @State var phoneNum = ""
     
     var body: some View {
         VStack {
-            Spacer()
-                .frame(height: 100)
             VStack(spacing: 20) {
                 HStack {
                     VStack(alignment: .leading, spacing: 8) {
@@ -37,8 +35,7 @@ struct SignUpInfoView: View {
                         limit: 15
                     )
                     .onChange(of: nickname) { newValue in
-                        viewModel.input.nickname = newValue
-                        viewModel.action(.validateNickname)
+                        viewModel.action(.validateNickname(newValue))
                     }
                 }
                 VStack(alignment: .leading) {
@@ -51,8 +48,7 @@ struct SignUpInfoView: View {
                         errorMessage: viewModel.output.phoneNumErrorMessage
                     )
                     .onChange(of: phoneNum) { newValue in
-                        viewModel.input.phoneNum = newValue
-                        viewModel.action(.validatePhoneNum)
+                        viewModel.action(.validatePhoneNum(newValue))
                     }
                 }
                 Spacer()
@@ -61,11 +57,10 @@ struct SignUpInfoView: View {
                     backgroundColor: .gray100,
                     foregroundColor: .gray0
                 ) {
-                    
+                    viewModel.action(.infoDone)
                 }
-                .disabled(viewModel.output.nextButtonDisable)
+                .disabled(viewModel.output.infoDoneButtonDisable)
             }
-            .padding(20)
         }
     }
 }
@@ -122,8 +117,4 @@ private struct PhoneNumberTextField: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-}
-
-#Preview {
-    SignUpInfoView(viewModel: SignUpInfoViewModel())
 }

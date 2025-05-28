@@ -1,5 +1,5 @@
 //
-//  SignupEmailView.swift
+//  SignUpEmailView.swift
 //  PickPle
 //
 //  Created by 정인선 on 5/11/25.
@@ -7,14 +7,12 @@
 
 import SwiftUI
 
-struct SignupEmailView: View {
-    @StateObject var viewModel: SignUpEmailViewModel
+struct SignUpEmailView: View {
+    @ObservedObject var viewModel: SignUpViewModel
     @State var email = ""
     
     var body: some View {
         VStack {
-            Spacer()
-                .frame(height: 100)
             VStack(spacing: 20) {
                 HStack {
                     Text("로그인에 사용할\n이메일을 입력해주세요.")
@@ -31,8 +29,7 @@ struct SignupEmailView: View {
                         errorMessage: viewModel.output.emailErrorMessage
                     )
                     .onChange(of: email) { newValue in
-                        viewModel.input.email = newValue
-                        viewModel.action(.validateEmail)
+                        viewModel.action(.validateEmail(newValue))
                     }
                 }
             }
@@ -42,14 +39,9 @@ struct SignupEmailView: View {
                 backgroundColor: .gray100,
                 foregroundColor: .gray0
             ) {
-                
+                viewModel.action(.emailDone)
             }
-            .disabled(viewModel.output.nextButtonDisable)
+            .disabled(viewModel.output.emailDoneButtonDisable)
         }
-        .padding(20)
     }
-}
-
-#Preview {
-    SignupEmailView(viewModel: SignUpEmailViewModel())
 }

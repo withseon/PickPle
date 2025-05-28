@@ -8,14 +8,12 @@
 import SwiftUI
 
 struct SignUpPasswordView: View {
-    @StateObject var viewModel: SignUpPasswordViewModel
+    @ObservedObject var viewModel: SignUpViewModel
     @State var password = ""
     @State var passwordConfirmation = ""
     
     var body: some View {
         VStack {
-            Spacer()
-                .frame(height: 100)
             VStack(spacing: 20) {
                 HStack {
                     VStack(alignment: .leading, spacing: 8) {
@@ -33,11 +31,11 @@ struct SignUpPasswordView: View {
                         "비밀번호를 입력해주세요",
                         text: $password,
                         strokeColor: viewModel.output.passwordErrorMessage.isEmpty ? .gray30 : .errorRed,
-                        errorMessage: viewModel.output.passwordErrorMessage
+                        errorMessage: viewModel.output.passwordErrorMessage,
+                        limit: 20
                     )
                     .onChange(of: password) { newValue in
-                        viewModel.input.password = newValue
-                        viewModel.action(.validatePassword)
+                        viewModel.action(.validatePassword(newValue))
                     }
                 }
                 VStack(alignment: .leading) {
@@ -47,11 +45,11 @@ struct SignUpPasswordView: View {
                         "비밀번호를 입력해주세요",
                         text: $passwordConfirmation,
                         strokeColor: viewModel.output.passwordConfirmErrorMessage.isEmpty ? .gray30 : .errorRed,
-                        errorMessage: viewModel.output.passwordConfirmErrorMessage
+                        errorMessage: viewModel.output.passwordConfirmErrorMessage,
+                        limit: 20
                     )
                     .onChange(of: passwordConfirmation) { newValue in
-                        viewModel.input.passwordConfirmation = newValue
-                        viewModel.action(.confirmPassword)
+                        viewModel.action(.confirmPassword(newValue))
                     }
                 }
             }
@@ -61,14 +59,9 @@ struct SignUpPasswordView: View {
                 backgroundColor: .gray100,
                 foregroundColor: .gray0
             ) {
-                
+                viewModel.action(.passwordDone)
             }
-            .disabled(viewModel.output.nextButtonDisable)
+            .disabled(viewModel.output.passwordDoneButtonDisable)
         }
-        .padding(20)
     }
-}
-
-#Preview {
-    SignUpPasswordView(viewModel: SignUpPasswordViewModel())
 }

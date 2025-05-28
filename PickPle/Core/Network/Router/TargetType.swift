@@ -25,6 +25,12 @@ extension TargetType {
     func asURLRequest() throws -> URLRequest {
         let url = try baseURL.asURL()
         var urlRequest = try URLRequest(url: url.appendingPathComponent(path), method: method)
+        
+        if let headers = headers {
+            headers.forEach { header in
+                urlRequest.setValue(header.value, forHTTPHeaderField: header.name)
+            }
+        }
 
         switch parameters {
         case .query(let request):
