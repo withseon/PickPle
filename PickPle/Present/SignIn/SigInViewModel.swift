@@ -8,32 +8,31 @@
 import Foundation
 import Combine
 
-final class SignInViewModel: ViewModelType {
+final class SignInViewModel: BaseViewModel, ViewModelType {
     var input = Input()
     @Published var output = Output()
     var cancellables = Set<AnyCancellable>()
+    private var signInParam = SignInParam.empty
+    private let userRepository: UserRepository
     
     enum FieldType {
         case email, password
     }
 
-    init() {
+    init(userRepository: UserRepository) {
+        self.userRepository = userRepository
+        super.init()
         transform()
-    }
-
-    deinit {
-        print("SignInViewModel deinit")
     }
 }
 
 // MARK: - Input/Output
 extension SignInViewModel {
     struct Input {
-        var email = ""
-        var password = ""
-        let validateEmailTrigger = PassthroughSubject<Void, Never>()
-        let validatePasswordTrigger = PassthroughSubject<Void, Never>()
+        let validateEmailTrigger = PassthroughSubject<String, Never>()
+        let validatePasswordTrigger = PassthroughSubject<String, Never>()
         let loginValidateTrigger = PassthroughSubject<Void, Never>()
+        let kakaoLoginTrigger = PassthroughSubject<Void, Never>()
     }
 
     struct Output {
@@ -45,17 +44,19 @@ extension SignInViewModel {
     func transform() {
         input.validateEmailTrigger
             .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
-            .sink { [weak self] _ in
+            .sink { [weak self] email in
                 guard let self else { return }
-                validateEmail()
+                signInParam.email = email
+                validateEmail(email)
             }
             .store(in: &cancellables)
         
         input.validatePasswordTrigger
             .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
-            .sink { [weak self] _ in
+            .sink { [weak self] password in
                 guard let self else { return }
-                validatePassword()
+                signInParam.password = password
+                validatePassword(password)
             }
             .store(in: &cancellables)
         
@@ -63,8 +64,9 @@ extension SignInViewModel {
             .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self else { return }
-                let validateEmail = validateEmail()
-                let validatePassword = validatePassword()
+                dump(signInParam)
+                let validateEmail = validateEmail(signInParam.email)
+                let validatePassword = validatePassword(signInParam.password)
                 
                 if !validateEmail {
                     output.setFocusState
@@ -75,19 +77,18 @@ extension SignInViewModel {
                 } else {
                     output.setFocusState
                         .send(nil)
-                    // TODO: 로그인 네트워크
-                    print("네트워크 처리")
+                    signIn()
                 }
             }
             .store(in: &cancellables)
     }
     
     @discardableResult
-    private func validateEmail() -> Bool {
-        if input.email.isEmpty {
+    private func validateEmail(_ email: String) -> Bool {
+        if email.isEmpty {
             output.emailErrorMessage = "이메일을 입력해주세요."
             return false
-        } else if !input.email.isValidEmail() {
+        } else if !email.isValidEmail() {
             output.emailErrorMessage = "유효한 이메일 주소를 입력해주세요."
             return false
         } else {
@@ -97,11 +98,11 @@ extension SignInViewModel {
     }
     
     @discardableResult
-    private func validatePassword() -> Bool {
-        if input.password.isEmpty {
+    private func validatePassword(_ password: String) -> Bool {
+        if password.isEmpty {
             output.passwordErrorMessage = "비밀번호를 입력해주세요."
             return false
-        } else if !input.password.isValidPassword() {
+        } else if !password.isValidPassword() {
             output.passwordErrorMessage = ""
             return false
         } else {
@@ -109,26 +110,45 @@ extension SignInViewModel {
             return true
         }
     }
+    
+    private func signIn() {
+        let publisher = userRepository.loginEmail(signInParam)
+        publisher
+            .receive(on: DispatchQueue.main)
+            .sink(with: self) { owner, result in
+                switch result {
+                case .success(let success):
+                    dump(success)
+                case .failure(let error):
+                    print(error)
+                }
+            }
+            .store(in: &cancellables)
+    }
 }
 
 // MARK: - Action
 extension SignInViewModel {
     enum Action {
-        case validateEmail
-        case validatePassword
+        case validateEmail(_ email: String)
+        case validatePassword(_ password: String)
         case loginButtonTapped
+        case kakaoLoginButtonTapped
     }
 
     func action(_ action: Action) {
         switch action {
-        case .validateEmail:
+        case .validateEmail(let email):
             input.validateEmailTrigger
-                .send(())
-        case .validatePassword:
+                .send(email)
+        case .validatePassword(let password):
             input.validatePasswordTrigger
-                .send(())
+                .send(password)
         case .loginButtonTapped:
             input.loginValidateTrigger
+                .send(())
+        case .kakaoLoginButtonTapped:
+            input.kakaoLoginTrigger
                 .send(())
         }
     }

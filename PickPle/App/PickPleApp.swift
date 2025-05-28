@@ -6,15 +6,31 @@
 //
 
 import SwiftUI
+import KakaoSDKCommon
+import KakaoSDKAuth
 
 @main
 struct PickPleApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @State private var isActive = false
+    
+    init() {
+        let nativeAppKey = Bundle.main.infoDictionary?["KAKAO_NATIVE_APP_KEY"] as? String ?? ""
+        KakaoSDK.initSDK(appKey: nativeAppKey)
+    }
     
     var body: some Scene {
         WindowGroup {
             if isActive {
-                MainTabView()
+//                MainTabView()
+                NavigationStack {
+                    SignInView(viewModel: SignInViewModel(userRepository: DefaultUserRepository.shared))
+                        .onOpenURL(perform: { url in
+                            if AuthApi.isKakaoTalkLoginUrl(url) {
+                                _ = AuthController.handleOpenUrl(url: url)
+                            }
+                        })
+                }
             } else {
                 SplashView()
                     .onAppear {
