@@ -23,12 +23,17 @@ enum NetworkManager {
         responseType: T.Type,
         errorType: E.Type
     ) async throws -> T {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        print(111)
         let request = API.session.request(target, interceptor: APIRequestInterceptor())
             .validate(statusCode: 200...299)
-            .serializingDecodable(T.self)
+            .serializingDecodable(T.self, decoder: decoder)
         
         do {
-            return try await request.value
+            let value = try await request.value
+            print("🦊 value::", value)
+            return value
         } catch {
             if let responseData = await request.response.data {
                 let decoder = JSONDecoder()

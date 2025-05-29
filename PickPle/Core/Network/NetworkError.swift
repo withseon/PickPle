@@ -11,6 +11,7 @@ import Alamofire
 enum NetworkError<E: ErrorResponseType>: Error {
     case alamofire(_ error: AFError)
     case server(_ error: E)
+    case expired
     case unknown(_ error: Error)
 }
 
@@ -19,6 +20,8 @@ extension NetworkError {
         switch self {
         case .server(let error):
             return error.message
+        case .expired:
+            return "로그인 정보가 만료되었습니다\n다시 로그인해주세요"
         default:
             return "네트워크 에러 발생"
         }
@@ -30,6 +33,8 @@ extension NetworkError {
             return "❌ Network Error:: alamofire - \(error)"
         case .server(let error):
             return "❌ Network Error:: serverError - \(error)"
+        case .expired:
+            return "❌ Network Error:: refresh Token expired"
         case .unknown(let error):
             return "❌ Network Error:: Unknown - \(error)"
         }

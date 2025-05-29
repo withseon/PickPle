@@ -11,6 +11,8 @@ import Alamofire
 enum UserRouter {
     case validateEmail(_ request: ValidationEmailRequest)
     case joinEmail(_ request: JoinRequest)
+    case emailLogin(_ request: EmailLoginRequest)
+    case myProfile
 }
 
 extension UserRouter: TargetType {
@@ -27,28 +29,38 @@ extension UserRouter: TargetType {
             return "/v1/users/validation/email"
         case .joinEmail:
             return "/v1/users/join"
+        case .emailLogin:
+            return "/v1/users/login"
+        case .myProfile:
+            return "v1/users/me/profile"
         }
     }
     
     var method: HTTPMethod {
         switch self {
-        case .validateEmail, .joinEmail:
+        case .myProfile:
+            return .get
+        case .validateEmail, .joinEmail, .emailLogin:
             return .post
         }
     }
     
     var parameters: RequestParams? {
         switch self {
+        case .myProfile:
+            return nil
         case .validateEmail(let request):
             return .body(request)
         case .joinEmail(let request):
+            return .body(request)
+        case .emailLogin(let request):
             return .body(request)
         }
     }
     
     var headers: HTTPHeaders? {
         switch self {
-        case .validateEmail, .joinEmail:
+        case .validateEmail, .joinEmail, .emailLogin, .myProfile:
             return nil
         }
     }
