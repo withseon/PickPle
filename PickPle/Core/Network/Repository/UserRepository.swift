@@ -86,10 +86,10 @@ final class DefaultUserRepository: UserRepository {
                     )
 //                    promise(.success(.success(response)))
                     
-                    SecureTokenManager.shared.encryptAndStoreToken(token: response.accessToken, forKey: SecureKey.ACCESS_TOKEN_KEY) { result in
+                    SecureTokenManager.shared.encryptAndStoreToken(token: response.accessToken, forKey: SecureKey.ACCESS_TOKEN) { result in
                         switch result {
                         case .success:
-                            SecureTokenManager.shared.encryptAndStoreToken(token: response.refreshToken, forKey: SecureKey.REFRESH_TOKEN_KEY) { result in
+                            SecureTokenManager.shared.encryptAndStoreToken(token: response.refreshToken, forKey: SecureKey.REFRESH_TOKEN) { result in
                                 switch result {
                                 case .success(let success):
                                     promise(.success(.success(response)))
@@ -117,14 +117,14 @@ final class DefaultUserRepository: UserRepository {
     func refresh(_ refreshToken: String, completion: @escaping (Result<Void, KeychainError>) -> Void) {
         Task {
             do {
-                let response = try await NetworkManager.executeFetch(target: UserRouter.refresh(refreshToken), responseType: RefreshResponse.self, errorType: UserErrorResponse.self)
+                let response = try await NetworkManager.executeFetch(target: AuthRouter.refresh(refreshToken), responseType: RefreshResponse.self, errorType: UserErrorResponse.self)
                 print(1)
-                SecureTokenManager.shared.encryptAndStoreToken(token: response.accessToken, forKey: SecureKey.ACCESS_TOKEN_KEY) { result in
+                SecureTokenManager.shared.encryptAndStoreToken(token: response.accessToken, forKey: SecureKey.ACCESS_TOKEN) { result in
                     print(2)
                     switch result {
                     case .success:
                         print(3)
-                        SecureTokenManager.shared.encryptAndStoreToken(token: response.refreshToken, forKey: SecureKey.REFRESH_TOKEN_KEY) { result in
+                        SecureTokenManager.shared.encryptAndStoreToken(token: response.refreshToken, forKey: SecureKey.REFRESH_TOKEN) { result in
                             switch result {
                             case .success:
                                 print(4)
@@ -147,4 +147,3 @@ final class DefaultUserRepository: UserRepository {
         }
     }
 }
-
