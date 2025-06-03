@@ -83,19 +83,31 @@ struct NaverMapView: UIViewRepresentable {
     func makeUIView(context: Context) -> NMFNaverMapView {
         let mapView = NMFNaverMapView()
         mapView.mapView.positionMode = .disabled
-        mapView.mapView.zoomLevel = 19
+        mapView.mapView.zoomLevel = 17
         mapView.showZoomControls = false
         
         mapView.mapView.touchDelegate = context.coordinator
         mapView.mapView.addCameraDelegate(delegate: context.coordinator)
+        
+        if let userLocation = UserDefaults.standard.data(forKey: "USER_LOCATION"),
+           let selectedLocation = try? JSONDecoder().decode(Location.self, from: userLocation) {
+            let coord = NMGLatLng(
+                lat: selectedLocation.latitude,
+                lng: selectedLocation.longitude
+            )
+            let cameraUpdate = NMFCameraUpdate(scrollTo: coord)
+            cameraUpdate.animation = .easeIn
+            mapView.mapView.moveCamera(cameraUpdate)
+            return mapView
+        }
         
         if let location = locationManager.location {
             let coord = NMGLatLng(lat: location.coordinate.latitude, lng: location.coordinate.longitude)
             let cameraUpdate = NMFCameraUpdate(scrollTo: coord)
             cameraUpdate.animation = .easeIn
             mapView.mapView.moveCamera(cameraUpdate)
+            return mapView
         }
-        
         
         return mapView
     }

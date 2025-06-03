@@ -89,6 +89,14 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     
     func didSelectedLocation() {
         if let tempLocation {
+            let location = Location(
+                latitude: tempLocation.coordinate.latitude,
+                longitude: tempLocation.coordinate.longitude,
+                address: tempPlace
+            )
+            if let encoded = try? JSONEncoder().encode(location) {
+                UserDefaults.standard.set(encoded, forKey: "USER_LOCATION")
+            }
         }
     }
 }
