@@ -29,7 +29,7 @@ struct PrimaryButton: View {
     
     var body: some View {
         Text(title)
-            .font(.pretendard(.title))
+            .font(.pretendard(.body1))
             .foregroundColor(isEnabled ? foregroundColor : .gray0)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
