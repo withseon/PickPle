@@ -1,0 +1,25 @@
+//
+//  StoreOrder.swift
+//  PickPle
+//
+//  Created by 정인선 on 5/22/25.
+//
+
+import Foundation
+
+enum StoreOrder: String, CaseIterable {
+    case distance, orders, reviews
+}
+
+extension StoreOrder {
+    var title: String {
+        switch self {
+        case .distance:
+            return "거리순"
+        case .orders:
+            return "주문순"
+        case .reviews:
+            return "리뷰수"
+        }
+    }
+}
