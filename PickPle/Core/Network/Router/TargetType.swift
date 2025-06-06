@@ -15,8 +15,8 @@ enum RequestParams {
 
 protocol TargetType: URLRequestConvertible {
     var baseURL: String { get }
-    var method: HTTPMethod { get }
     var path: String { get }
+    var method: HTTPMethod { get }
     var parameters: RequestParams? { get }
     var headers: HTTPHeaders? { get }
 }
