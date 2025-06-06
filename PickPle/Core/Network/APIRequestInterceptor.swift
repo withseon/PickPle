@@ -57,7 +57,7 @@ final class APIRequestInterceptor: RequestInterceptor, @unchecked Sendable {
         // 리프레시 토큰 만료
         guard let response = request.response, response.statusCode != 418 else {
             print("retry:: 리프레시 토큰 만료")
-            completion(.doNotRetryWithError(NetworkError<UserErrorResponse>.expired))
+            completion(.doNotRetryWithError(NetworkError.expired))
             return
         }
 
@@ -100,7 +100,7 @@ final class APIRequestInterceptor: RequestInterceptor, @unchecked Sendable {
                         case .failure(let failure):
                             print("✨ retry refresh 리프레시 토큰 유효성 실패")
                             print(failure)
-                            let error = NetworkError<UserErrorResponse>.expired
+                            let error = NetworkError.expired
                             requestForRetry.forEach { $0(.doNotRetryWithError(error)) }
                         }
                     }
@@ -108,7 +108,7 @@ final class APIRequestInterceptor: RequestInterceptor, @unchecked Sendable {
                 case .failure:
                     print("✨ retry refresh 리프레시 토큰 복호화 실패")
                     requestForRetry.forEach {
-                        $0(.doNotRetryWithError(NetworkError<UserErrorResponse>.expired))
+                        $0(.doNotRetryWithError(NetworkError.expired))
                     }
                 }
             }

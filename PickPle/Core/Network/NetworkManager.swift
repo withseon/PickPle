@@ -42,7 +42,7 @@ enum NetworkManager {
         } catch {
             if let error = await request.response.error,
                case .requestRetryFailed(let retryError, _) = error,
-               let error = retryError as? NetworkError<UserErrorResponse> {
+               let error = retryError as? NetworkError {
                 throw error
             }
             
@@ -51,13 +51,13 @@ enum NetworkManager {
                 let decoder = JSONDecoder()
                 decoder.keyDecodingStrategy = .convertFromSnakeCase
                 let errorResult = try decoder.decode(errorType.self, from: responseData)
-                throw NetworkError<E>.server(errorResult)
+                throw NetworkError.server(errorResult)
             } else if let error = error as? AFError {
                 print(555)
-                throw NetworkError<E>.alamofire(error)
+                throw NetworkError.alamofire(error)
             } else {
                 print(666)
-                throw NetworkError<E>.unknown(error)
+                throw NetworkError.unknown(error)
             }
         }
     }

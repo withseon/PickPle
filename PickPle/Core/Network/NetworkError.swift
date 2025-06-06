@@ -8,9 +8,9 @@
 import Foundation
 import Alamofire
 
-enum NetworkError<E: ErrorResponseType>: Error {
+enum NetworkError: Error {
     case alamofire(_ error: AFError)
-    case server(_ error: E)
+    case server(_ error: ErrorResponseType)
     case expired
     case unknown(_ error: Error)
 }

@@ -8,18 +8,17 @@
 import Combine
 
 protocol UserRepository {
-    func validateEmail(_ email: String) -> AnyPublisher<Result<Void, NetworkError<UserErrorResponse>>, Never>
-    func signup(_ param: SignUpParam) -> AnyPublisher<Result<JoinResponse, NetworkError<UserErrorResponse>>, Never>
-    func loginEmail(_ param: SignInParam) -> AnyPublisher<Result<EmailLoginResponse, NetworkError<UserErrorResponse>>, Never>
+    func validateEmail(_ email: String) -> AnyPublisher<Result<Void, NetworkError>, Never>
+    func signup(_ param: SignUpParam) -> AnyPublisher<Result<JoinResponse, NetworkError>, Never>
+    func loginEmail(_ param: SignInParam) -> AnyPublisher<Result<EmailLoginResponse, NetworkError>, Never>
     func refresh(_ refreshToken: String, completion: @escaping (Result<Void, KeychainError>) -> Void)
 }
 
 final class DefaultUserRepository: UserRepository {
     static let shared = DefaultUserRepository()
-    
     private init() { }
     
-    func validateEmail(_ email: String) -> AnyPublisher<Result<Void, NetworkError<UserErrorResponse>>, Never> {
+    func validateEmail(_ email: String) -> AnyPublisher<Result<Void, NetworkError>, Never> {
         return Future { promise in
             Task {
                 do {
@@ -30,7 +29,7 @@ final class DefaultUserRepository: UserRepository {
                     )
                     promise(.success(.success(())))
                 } catch {
-                    if case let NetworkError<UserErrorResponse>.server(serverError) = error {
+                    if case let NetworkError.server(serverError) = error {
                         promise(.success(.failure(.server(serverError))))
                     } else {
                         promise(.success(.failure(.unknown(error))))
@@ -41,7 +40,7 @@ final class DefaultUserRepository: UserRepository {
         .eraseToAnyPublisher()
     }
     
-    func signup(_ param: SignUpParam) -> AnyPublisher<Result<JoinResponse, NetworkError<UserErrorResponse>>, Never> {
+    func signup(_ param: SignUpParam) -> AnyPublisher<Result<JoinResponse, NetworkError>, Never> {
         return Future { promise in
             Task {
                 do {
@@ -59,7 +58,7 @@ final class DefaultUserRepository: UserRepository {
                     )
                     promise(.success(.success(response)))
                 } catch {
-                    if case let NetworkError<UserErrorResponse>.server(serverError) = error {
+                    if case let NetworkError.server(serverError) = error {
                         promise(.success(.failure(.server(serverError))))
                     } else {
                         promise(.success(.failure(.unknown(error))))
@@ -70,7 +69,7 @@ final class DefaultUserRepository: UserRepository {
         .eraseToAnyPublisher()
     }
     
-    func loginEmail(_ param: SignInParam) -> AnyPublisher<Result<EmailLoginResponse, NetworkError<UserErrorResponse>>, Never> {
+    func loginEmail(_ param: SignInParam) -> AnyPublisher<Result<EmailLoginResponse, NetworkError>, Never> {
         return Future { promise in
             Task {
                 do {
@@ -103,7 +102,7 @@ final class DefaultUserRepository: UserRepository {
                     }
                     
                 } catch {
-                    if case let NetworkError<UserErrorResponse>.server(serverError) = error {
+                    if case let NetworkError.server(serverError) = error {
                         promise(.success(.failure(.server(serverError))))
                     } else {
                         promise(.success(.failure(.unknown(error))))

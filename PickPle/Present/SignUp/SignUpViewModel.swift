@@ -118,7 +118,7 @@ extension SignUpViewModel {
         
         input.InfoDoneTrigger
             .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
-            .flatMap { [weak self] _ -> AnyPublisher<Result<JoinResponse, NetworkError<UserErrorResponse>>, Never> in
+            .flatMap { [weak self] _ -> AnyPublisher<Result<JoinResponse, NetworkError>, Never> in
                 guard let self else { return AnyPublisher(Just(.failure(.server(UserErrorResponse(message: ""))))) }
                 return userRepository.signup(signUpParam)
             }
@@ -155,7 +155,7 @@ extension SignUpViewModel {
                         owner.output.emailErrorMessage = ""
                         owner.output.emailDoneButtonDisable = false
                     case .failure(let failure):
-                        if case let NetworkError<UserErrorResponse>.server(serverError) = failure {
+                        if case let NetworkError.server(serverError) = failure {
                             owner.output.emailErrorMessage = serverError.message
                         } else {
                             owner.output.emailErrorMessage = ""
