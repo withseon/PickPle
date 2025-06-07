@@ -13,20 +13,20 @@ struct StoreSummaryListResponse: Decodable {
         let category: String
         let name: String
         let close: String
-        let storeImageUrls: String
+        let storeImageUrls: [String]
         let isPicchelin: Bool
         let isPick: Bool
         let pickCount: Int
-        let hasTag: [String]
+        let hashTags: [String]
         let totalRating: Float
         let totalOrderCount: Int
         let totalReviewCount: Int
         let geolocation: GeolocationResponse
         let distance: Float
         let createdAt: String
-        let updateAt: String
+        let updatedAt: String
     }
     
-    let data: StoreSummary
+    let data: [StoreSummary]
     let nextCursor: String
 }
