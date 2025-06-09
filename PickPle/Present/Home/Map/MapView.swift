@@ -89,8 +89,7 @@ struct NaverMapView: UIViewRepresentable {
         mapView.mapView.touchDelegate = context.coordinator
         mapView.mapView.addCameraDelegate(delegate: context.coordinator)
         
-        if let userLocation = UserDefaults.standard.data(forKey: "USER_LOCATION"),
-           let selectedLocation = try? JSONDecoder().decode(Location.self, from: userLocation) {
+        if let selectedLocation = UserDefaultsManager.selectedLocation {
             let coord = NMGLatLng(
                 lat: selectedLocation.latitude,
                 lng: selectedLocation.longitude

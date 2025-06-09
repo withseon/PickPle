@@ -27,6 +27,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
     
     deinit {
+        print("locationManager Deinit")
         locationManager.stopUpdatingLocation()
     }
     
@@ -94,9 +95,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
                 longitude: tempLocation.coordinate.longitude,
                 address: tempPlace
             )
-            if let encoded = try? JSONEncoder().encode(location) {
-                UserDefaults.standard.set(encoded, forKey: "USER_LOCATION")
-            }
+            UserDefaultsManager.selectedLocation = location
         }
     }
 }
