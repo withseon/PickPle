@@ -50,6 +50,31 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
         checkLocationAuthorization()
     }
     
+    func requestLocationAndExecute(completion: @escaping (Bool) -> Void) {
+        initialLocationManager()
+        
+        Task {
+            if authorizationStatus == .authorizedWhenInUse ||
+               authorizationStatus == .authorizedAlways {
+                
+                // 위치 정보가 없으면 가져올 때까지 기다림 (최대 2초)
+                var attempts = 0
+                while location == nil && attempts < 20 {
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                    attempts += 1
+                }
+                
+                await MainActor.run {
+                    completion(location != nil)
+                }
+            } else {
+                await MainActor.run {
+                    completion(false)
+                }
+            }
+        }
+    }
+    
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
     }

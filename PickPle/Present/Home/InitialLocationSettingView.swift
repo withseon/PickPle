@@ -27,13 +27,22 @@ struct InitialLocationSettingView: View {
                 backgroundColor: .gray100,
                 foregroundColor: .gray0
             ) {
-                initializeLocationAndShowMap()
+                locationManager.requestLocationAndExecute { result in
+                    if result {
+                        showMapSheet = true
+                    } else {
+                        // TODO: UI 대응
+                        print("위치 정보를 가져오지 못했습니다.")
+                    }
+                }
             }
             Spacer()
         }
         .padding(20)
         .sheet(isPresented: $showMapSheet) {
-            MapView(locationManager: locationManager)
+            MapView(locationManager: locationManager) {
+                // TODO: 선택 완료 동작
+            }
         }
         .alert("위치 기반 서비스를 사용하려면 위치 권한이 필요합니다.", isPresented: $locationManager.showAlert) {
             Button("설정으로 이동") {
@@ -44,31 +53,4 @@ struct InitialLocationSettingView: View {
             Button("취소", role: .cancel) {}
         }
     }
-    
-    private func initializeLocationAndShowMap() {
-        locationManager.initialLocationManager()
-        
-        Task {
-            if locationManager.authorizationStatus == .authorizedWhenInUse ||
-                locationManager.authorizationStatus == .authorizedAlways {
-                
-                // 위치 정보가 없으면 가져올 때까지 기다림 (최대 2초)
-                var attempts = 0
-                while locationManager.location == nil && attempts < 20 {
-                    try await Task.sleep(nanoseconds: 100_000_000)
-                    attempts += 1
-                }
-                
-                await MainActor.run {
-                    if locationManager.location != nil {
-                        showMapSheet = true
-                    } else {
-                        print("위치 정보를 가져오지 못했습니다.")
-                    }
-                }
-            }
-        }
-    }
 }
-
-

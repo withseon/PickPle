@@ -31,7 +31,7 @@ struct MainContentView: View {
                 HStack {
                     LocationButton(address: viewModel.output.address)
                         .wrapToButton {
-                            
+                            viewModel.action(.mapSheet)
                         }
                         .buttonStyle(.plain)
                     Spacer()
@@ -52,6 +52,11 @@ struct MainContentView: View {
             }
         }
         .background(.brightSprout)
+        .sheet(isPresented: $viewModel.output.showMapSheet) {
+            MapView(locationManager: viewModel.locationManager) {
+                viewModel.action(.selectedLocation)
+            }
+        }
     }
 }
 

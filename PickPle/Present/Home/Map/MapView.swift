@@ -13,6 +13,8 @@ struct MapView: View {
     @ObservedObject var locationManager: LocationManager
     @State var isChanging = false
     
+    let onLocationSelected: (() -> Void)?
+    
     var body: some View {
         VStack {
             ZStack {
@@ -48,6 +50,7 @@ struct MapView: View {
                     .font(.pretendard(.body1))
                 PrimaryButton("이 위치로 설정하기") {
                     locationManager.didSelectedLocation()
+                    onLocationSelected?()
                     dismiss()
                 }
                 .disabled(isChanging)
