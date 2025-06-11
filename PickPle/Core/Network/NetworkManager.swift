@@ -16,9 +16,15 @@ private enum API {
     }()
 }
 
-enum NetworkManager {
+final class NetworkManager {
+    private let interceptor: RequestInterceptor
+    
+    init(interceptor: RequestInterceptor) {
+        self.interceptor = interceptor
+    }
+    
     @discardableResult
-    static func executeFetch<T: Decodable, E: ErrorResponseType>(
+    func executeFetch<T: Decodable, E: ErrorResponseType>(
         target: URLRequestConvertible,
         responseType: T.Type,
         errorType: E.Type
@@ -27,7 +33,7 @@ enum NetworkManager {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         print(111)
-        let request = API.session.request(target, interceptor: APIRequestInterceptor())
+        let request = API.session.request(target, interceptor: interceptor)
             .validate(statusCode: 200...299)
             .serializingDecodable(T.self, decoder: decoder)
         print(222)
@@ -35,10 +41,7 @@ enum NetworkManager {
         do {
             print(333)
             let value = try await request.value
-            print("🦊 value::", value)
             return value
-//            print("🦊 value::", try await request.value)
-//            return try await request.value
         } catch {
             if let error = await request.response.error,
                case .requestRetryFailed(let retryError, _) = error,

@@ -15,14 +15,18 @@ protocol UserRepository {
 }
 
 final class DefaultUserRepository: UserRepository {
-    static let shared = DefaultUserRepository()
-    private init() { }
+    private let networkManager: NetworkManager
+    
+    init(networkManager: NetworkManager) {
+        self.networkManager = networkManager
+    }
     
     func validateEmail(_ email: String) -> AnyPublisher<Result<Void, NetworkError>, Never> {
         return Future { promise in
-            Task {
+            Task { [weak self] in
+                guard let self else { return }
                 do {
-                    try await NetworkManager.executeFetch(
+                    try await networkManager.executeFetch(
                         target: UserRouter.validateEmail(ValidationEmailRequest(email: email)),
                         responseType: ValidationEmailResponse.self,
                         errorType: UserErrorResponse.self
@@ -42,7 +46,8 @@ final class DefaultUserRepository: UserRepository {
     
     func signup(_ param: SignUpParam) -> AnyPublisher<Result<JoinResponse, NetworkError>, Never> {
         return Future { promise in
-            Task {
+            Task { [weak self] in
+                guard let self else { return }
                 do {
                     let dto = JoinRequest(
                         email: param.email,
@@ -51,7 +56,7 @@ final class DefaultUserRepository: UserRepository {
                         phoneNum: param.phoneNum,
                         deviceToken: DeviceToken.value
                     )
-                    let response = try await NetworkManager.executeFetch(
+                    let response = try await networkManager.executeFetch(
                         target: UserRouter.joinEmail(dto),
                         responseType: JoinResponse.self,
                         errorType: UserErrorResponse.self
@@ -71,14 +76,15 @@ final class DefaultUserRepository: UserRepository {
     
     func loginEmail(_ param: SignInParam) -> AnyPublisher<Result<EmailLoginResponse, NetworkError>, Never> {
         return Future { promise in
-            Task {
+            Task { [weak self] in
+                guard let self else { return }
                 do {
                     let dto = EmailLoginRequest(
                         email: param.email,
                         password: param.password,
                         deviceToken: DeviceToken.value
                     )
-                    let response = try await NetworkManager.executeFetch(
+                    let response = try await networkManager.executeFetch(
                         target: UserRouter.emailLogin(dto),
                         responseType: EmailLoginResponse.self,
                         errorType: UserErrorResponse.self
@@ -114,9 +120,10 @@ final class DefaultUserRepository: UserRepository {
     }
     
     func refresh(_ refreshToken: String, completion: @escaping (Result<Void, KeychainError>) -> Void) {
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             do {
-                let response = try await NetworkManager.executeFetch(target: AuthRouter.refresh(refreshToken), responseType: RefreshResponse.self, errorType: UserErrorResponse.self)
+                let response = try await networkManager.executeFetch(target: AuthRouter.refresh(refreshToken), responseType: RefreshResponse.self, errorType: UserErrorResponse.self)
                 print(1)
                 SecureTokenManager.shared.encryptAndStoreToken(token: response.accessToken, forKey: SecureKey.ACCESS_TOKEN) { result in
                     print(2)

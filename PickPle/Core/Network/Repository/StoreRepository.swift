@@ -13,21 +13,27 @@ protocol StoreRepository {
 }
 
 final class DefaultStoreRepository: StoreRepository {
-    static let shared = DefaultStoreRepository()
-    private init() { }
+    private let networkManager: NetworkManager
+    
+    init(networkManager: NetworkManager) {
+        self.networkManager = networkManager
+    }
     
     func storeList(_ param: StoreListParam) -> AnyPublisher<Result<StoreSummaryListResponse, NetworkError>, Never> {
         return Future { promise in
-            Task {
+            Task { [weak self] in
+                guard let self,
+                      let latitude = UserDefaultsManager.selectedLocation?.latitude,
+                      let longitude = UserDefaultsManager.selectedLocation?.longitude else { return }
                 do {
                     let dto = StoreSummaryListRequest(
-                        category: param.category?.rawValue,
-                        longitude: param.longitude,
-                        latitude: param.latitude,
+                        category: param.category?.title,
+                        longitude: Float(longitude),
+                        latitude: Float(latitude),
                         next: param.next,
                         limit: nil,
                         orderBy: param.orderBy?.rawValue)
-                    let storeList = try await NetworkManager.executeFetch(
+                    let storeList = try await networkManager.executeFetch(
                         target: StoreRouter.stores(dto),
                         responseType: StoreSummaryListResponse.self,
                         errorType: UserErrorResponse.self
@@ -47,10 +53,11 @@ final class DefaultStoreRepository: StoreRepository {
     
     func popularStore(_ category: StoreCategory?) -> AnyPublisher<Result<PopularStoreListResponse, NetworkError>, Never> {
         return Future { promise in
-            Task {
+            Task { [weak self] in
+                guard let self else { return }
                 do {
-                    let dto = PopularStoreRequest(category: category?.rawValue)
-                    let storeList = try await NetworkManager.executeFetch(
+                    let dto = PopularStoreRequest(category: category?.title)
+                    let storeList = try await networkManager.executeFetch(
                         target: StoreRouter.popularStores(dto),
                         responseType: PopularStoreListResponse.self,
                         errorType: UserErrorResponse.self)

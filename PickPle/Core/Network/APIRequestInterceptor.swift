@@ -9,12 +9,11 @@ import Foundation
 import Alamofire
 
 final class APIRequestInterceptor: RequestInterceptor, @unchecked Sendable {
-//    static let shared = APIRequestInterceptor()
-//    private init() { }
-
     private let lock = NSLock()
     private var isRefreshing = false
     private var requestForRetry: [(RetryResult) -> Void] = []
+    
+    var userRepository: UserRepository!
 
     func adapt(_ urlRequest: URLRequest, for session: Session, completion: @escaping (Result<URLRequest, any Error>) -> Void) {
         guard let url = urlRequest.url?.absoluteString else {
@@ -82,7 +81,7 @@ final class APIRequestInterceptor: RequestInterceptor, @unchecked Sendable {
 
                 switch result {
                 case .success(let refreshToken):
-                    DefaultUserRepository.shared.refresh(refreshToken) { [weak self] result in
+                    userRepository.refresh(refreshToken) { [weak self] result in
                         guard let self else { return }
 
                         defer {
