@@ -23,7 +23,7 @@ struct PickPleApp: App {
     var body: some Scene {
         WindowGroup {
             if isActive {
-                CoordinatorView(coordinator: coordinator, rootItem: .login)
+                CoordinatorView(coordinator: coordinator)
             } else {
                 SplashView()
                     .task {
