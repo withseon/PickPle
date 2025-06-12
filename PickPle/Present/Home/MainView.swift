@@ -7,12 +7,26 @@
 
 import SwiftUI
 
+enum PickFilter: CaseIterable {
+    case pickchelin, myPick
+    
+    var title: String {
+        switch self {
+        case .pickchelin:
+            return "픽슐랭"
+        case .myPick:
+            return "MY PICK"
+        }
+    }
+}
+
 struct MainView: View {
     @StateObject var viewModel: MainViewModel
+    
     var body: some View {
         if let _ = UserDefaultsManager.selectedLocation {
             MainContentView(viewModel: viewModel)
-                .onAppear {
+                .task {
                     viewModel.action(.onAppear)
                 }
         } else {
@@ -21,7 +35,7 @@ struct MainView: View {
     }
 }
 
-struct MainContentView: View {
+private struct MainContentView: View {
     @ObservedObject var viewModel: MainViewModel
     @State var searchText = ""
     
@@ -38,15 +52,44 @@ struct MainContentView: View {
                 }
                 SearchTextField("검색어를 입력해주세요", text: $searchText)
                 SearchListView()
+                    .wrapToButton {
+                        // TODO: 검색 결과 이동
+                    }
             }
             .padding(.horizontal, 20)
             .padding(.top, 4)
             
-            ScrollView {
-                StoreListView()
-                    .frame(maxWidth: .infinity)
-                    .edgesIgnoringSafeArea(.bottom)
+            List {
+                Section {
+                    ForEach(viewModel.output.storeSummaries, id: \.storeId) { store in
+                        VStack(spacing: 0) {
+                            StoreView(store: store)
+                                .padding(20)
+                            // TODO: 상세뷰 이동
+                            if store != viewModel.output.storeSummaries.last {
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundStyle(.gray30)
+                                    .padding(.horizontal, 20)
+                            }
+                        }
+                    }
+                } header: {
+                    StoreHeaderView(viewModel: viewModel)
+                    .background(.gray15)
+                }
+                .background(.gray15)
+                .listRowInsets(.init())
+                .listRowSeparator(.hidden)
             }
+            .clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 20,
+                    topTrailingRadius: 20
+                )
+            )
+            .listStyle(.grouped)
+            .scrollContentBackground(.hidden)
             .refreshable {
                 print("새로고침")
             }
@@ -56,6 +99,26 @@ struct MainContentView: View {
             MapView(locationManager: viewModel.locationManager) {
                 viewModel.action(.selectedLocation)
             }
+        }
+        .sheet(isPresented: $viewModel.output.showOrderSheet) {
+            VStack(alignment: .center) {
+                ForEach(StoreOrder.allCases, id: \.self) { item in
+                    Text(item.title)
+                        .font(.pretendard(.body1))
+                        .padding()
+                        .foregroundStyle(viewModel.output.selectedOrder == item ? .blackSprout : .gray100)
+                        .onTapGesture { _ in
+                            viewModel.action(.selectedOrder(item))
+                        }
+                    if item != StoreOrder.allCases.last {
+                        Rectangle()
+                            .frame(height: 1)
+                            .foregroundStyle(.gray30)
+                            .padding(.horizontal, 20)
+                    }
+                }
+            }
+            .presentationDetents([.fraction(0.3)])
         }
     }
 }
@@ -93,19 +156,18 @@ private struct SearchListView: View {
                 .foregroundStyle(.blackSprout)
             Spacer()
         }
-        .wrapToButton {
-            // TODO: 검색 결과 이동
-        }
     }
 }
 
-// MARK: - 픽업 가게 리스트
-struct StoreListView: View {
+// MARK: - 헤더 뷰
+private struct StoreHeaderView: View {
+    @ObservedObject var viewModel: MainViewModel
+    
     var body: some View {
         VStack(spacing: 20) {
             HStack {
-                ForEach(StoreCategory.allCases, id: \.self) {
-                    CategoryButton(icon: $0.icon, title: $0.title)
+                ForEach(StoreCategory.allCases, id: \.self) { category in
+                    CategoryButton(viewModel: viewModel, category: category)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -121,10 +183,9 @@ struct StoreListView: View {
                 
                 ScrollView(.horizontal) {
                     HStack {
-                        PopularStoreView()
-                        PopularStoreView()
-                        PopularStoreView()
-                        PopularStoreView()
+                        ForEach(viewModel.output.popularStores, id: \.storeId) { store in
+                            PopularStoreView(store: store)
+                        }
                     }
                     .padding(.horizontal, 20)
                 }
@@ -137,56 +198,40 @@ struct StoreListView: View {
                         .font(.pretendard(.body2))
                     Spacer()
                     HStack {
-                        Text("거리순")
+                        Text(viewModel.output.selectedOrder.title)
                             .font(.pretendard(.caption1))
                         Image("list")
                             .iconFrame(16)
                     }
                     .foregroundStyle(.blackSprout)
+                    .wrapToButton {
+                        viewModel.action(.orderSheet)
+                    }
                 }
                 
                 HStack(spacing: 12) {
-                    PickStoreFilterButton(isSelected: true, title: "픽슐랭")
-                    PickStoreFilterButton(isSelected: false, title: "My Pick")
-                    Spacer()
-                }
-                
-                VStack {
-                    ForEach(1...20, id: \.self) { item in
-                        StoreView()
-                        if item != 20 {
-                            Rectangle()
-                                .frame(height: 1)
-                                .frame(maxWidth: .infinity)
-                                .foregroundStyle(.gray30)
-                                .padding(.vertical, 4)
-                        }
+                    ForEach(PickFilter.allCases, id: \.self) { filter in
+                        PickStoreFilterButton(viewModel: viewModel, filter: filter)
                     }
+                    Spacer()
                 }
             }
             .padding(.horizontal, 20)
         }
-        .padding(.vertical, 20)
-        .background(.gray15)
-        .clipShape(
-            UnevenRoundedRectangle(
-                topLeadingRadius: 20,
-                topTrailingRadius: 20
-            )
-        )
-        .frame(maxWidth: .infinity)
+        .padding(.vertical)
     }
 }
 
 // MARK: - 카데고리 버튼
 private struct CategoryButton: View {
-    var icon: String
-    var title: String
-    @State var isSelected = false
+    @ObservedObject var viewModel: MainViewModel
+    let category: StoreCategory
     
     var body: some View {
+        let isSelected = viewModel.output.selectedCategory == category
+        
         VStack(alignment: .center) {
-            Image(icon)
+            Image(category.icon)
                 .renderingMode(.original)
                 .frame(width: 56, height: 56)
                 .background(.gray0)
@@ -196,38 +241,45 @@ private struct CategoryButton: View {
                         .stroke(isSelected ? .blackSprout : .gray30, lineWidth: isSelected ? 1.5 : 1)
                 )
             
-            Text(title)
+            Text(category.title)
                 .font(.pretendard(.body3))
                 .foregroundStyle(isSelected ? .blackSprout : .gray60)
         }
         .frame(maxWidth: .infinity)
         .wrapToButton {
-            isSelected.toggle()
+            viewModel.action(.selectedCategory(category))
         }
     }
 }
 
 // MARK: - 픽업 가게 필터 버튼
 struct PickStoreFilterButton: View {
-    @State var isSelected = false
-    var title: String
+    @ObservedObject var viewModel: MainViewModel
+    var filter: PickFilter
     
     var body: some View {
+        let isSelected = viewModel.output.selectedPickFilters.contains(filter)
         HStack(spacing: 4) {
             Image(systemName: isSelected ? "checkmark.square.fill" : "checkmark.square")
-            Text(title)
+            Text(filter.title)
                 .font(.pretendard(.caption1))
         }
         .foregroundStyle(isSelected ? .blackSprout : .brightSprout)
         .wrapToButton {
-            isSelected.toggle()
+            viewModel.action(.selectedPickFilter(filter))
         }
     }
 }
 
 // MARK: - 실시간 인기 가게 셀
 private struct PopularStoreView: View {
-    @State var isLiked = false
+    let store: PopularStore
+    @State var isLiked: Bool
+    
+    init(store: PopularStore) {
+        self.store = store
+        self.isLiked = store.isPick
+    }
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -245,28 +297,29 @@ private struct PopularStoreView: View {
                         .buttonStyle(.plain)
                 }
                 .overlay(alignment: .topTrailing) {
-                    PickChelinTagView()
-                        .padding(8)
+                    if store.isPicchelin {
+                        PickChelinTagView()
+                            .padding(8)
+                    }
                 }
             VStack {
                 HStack {
-                    Text("가게 이름이 엄청나게 길어용ㅇㅇㅇ")
+                    Text(store.name)
                         .lineLimit(1)
                         .font(.pretendard(.body3))
                     HStack(spacing: 0) {
                         Image("like.fill")
                             .iconFrame(16)
                             .foregroundStyle(.brightForsythia)
-                        Text("NNN개")
+                        Text(store.pickCount)
                             .font(.pretendard(.body3))
-                        
                     }
                     Spacer()
                 }
                 HStack {
-                    detailInfoText(icon: "distance", text: "N.Nkm")
-                    detailInfoText(icon: "time", text: "NPM")
-                    detailInfoText(icon: "run", text: "NNN회")
+                    detailInfoText(icon: "distance", text: store.distance)
+                    detailInfoText(icon: "time", text: store.close)
+                    detailInfoText(icon: "run", text: store.totalOrderCount)
                     Spacer()
                 }
             }
@@ -361,7 +414,13 @@ private struct PopularStoreView: View {
 
 // MARK: - 가게 리스트 셀
 private struct StoreView: View {
+    let store: StoreSummary
     @State var isLiked = false
+    
+    init(store: StoreSummary) {
+        self.store = store
+        self.isLiked = store.isPick
+    }
     
     var body: some View {
         VStack {
@@ -372,7 +431,7 @@ private struct StoreView: View {
                     "https://picsum.photos/id/30/400/300"
                 ],
                 ratio: 5/2,
-                isPickchelin: true
+                isPickchelin: store.isPicchelin
             )
             .overlay(alignment: .topLeading) {
                 Image(isLiked ? "like.fill" : "like")
@@ -387,23 +446,23 @@ private struct StoreView: View {
             }
             VStack {
                 HStack {
-                    Text("가게 이름이 진짜 긴 경우ㅇㅇㅇㅇㅇㅇㅇ")
+                    Text(store.name)
                         .lineLimit(1)
                         .font(.pretendard(.body1))
-                    mainInfoText(icon: "like.fill", text: "NNN개")
-                    mainInfoText(icon: "like.fill", text: "N.N", subText: "(NNN)")
+                    mainInfoText(icon: "like.fill", text: store.pickCount)
+                    mainInfoText(icon: "like.fill", text: store.totalRating, subText: store.totalReviewCount)
                     Spacer()
                 }
                 HStack {
-                    detailInfoText(icon: "distance", text: "N.Nkm")
-                    detailInfoText(icon: "time", text: "NPM")
-                    detailInfoText(icon: "run", text: "NNN회")
+                    detailInfoText(icon: "distance", text: store.distance)
+                    detailInfoText(icon: "time", text: store.close)
+                    detailInfoText(icon: "run", text: store.totalOrderCount)
                     Spacer()
                 }
             }
             HStack {
-                ForEach(1...2, id: \.self) { item in
-                    Text("#태그이름")
+                ForEach(store.hashTags, id: \.self) { hasTag in
+                    Text(hasTag)
                         .font(.pretendard(.caption1))
                         .foregroundStyle(.gray0)
                         .padding(4)
@@ -440,10 +499,4 @@ private struct StoreView: View {
                 .foregroundStyle(.gray60)
         }
     }
-}
-
-// MARK: - 
-
-#Preview {
-    MainView(viewModel: MainViewModel(storeRepository: DefaultStoreRepository.shared))
 }

@@ -71,8 +71,10 @@ struct StoreGalleryImageView: View {
             AsyncImageView(url: urls[0], width: width * 0.65, height: geometry.size.height)
                 .cornerRadius(12)
                 .overlay(alignment: .topTrailing) {
-                    PickChelinTagView()
-                        .padding(8)
+                    if isPickchelin {
+                        PickChelinTagView()
+                            .padding(8)
+                    }
                 }
             
             AsyncImageView(url: urls[1], width: width * 0.35, height: geometry.size.height)
@@ -94,8 +96,10 @@ struct StoreGalleryImageView: View {
             AsyncImageView(url: urls[0], width: width * 0.65, height: geometry.size.height)
                 .cornerRadius(12)
                 .overlay(alignment: .topTrailing) {
-                    PickChelinTagView()
-                        .padding(8)
+                    if isPickchelin {
+                        PickChelinTagView()
+                            .padding(8)
+                    }
                 }
             
             VStack(spacing: 8) {
@@ -124,8 +128,10 @@ struct StoreGalleryImageView: View {
                 }
             )
             .overlay(alignment: .topTrailing) {
-                PickChelinTagView()
-                    .padding(8)
+                if isPickchelin {
+                    PickChelinTagView()
+                        .padding(8)
+                }
             }
             .cornerRadius(12)
     }
