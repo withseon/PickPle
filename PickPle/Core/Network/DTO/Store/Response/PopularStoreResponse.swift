@@ -28,3 +28,20 @@ struct PopularStoreListResponse: Decodable {
     
     let data: [PopularStoreResponse]
 }
+
+extension PopularStoreListResponse.PopularStoreResponse {
+    var asPopularStore: PopularStore {
+        return PopularStore(
+            storeId: storeId,
+            category: category,
+            name: name,
+            close: FormatHelper.closeTime(close),
+            mainImageUrl: storeImageUrls[0],
+            isPicchelin: isPicchelin,
+            isPick: isPick,
+            pickCount: "\(pickCount)개",
+            totalOrderCount: "\(totalOrderCount)회",
+            distance: FormatHelper.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude)
+        )
+    }
+}
