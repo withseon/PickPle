@@ -7,6 +7,8 @@
 
 import Foundation
 
+typealias TokenKeys = (accessToken: String, refreshToken: String)
+
 protocol SecureTokenManagerable {
     func encryptAndStoreToken(token: String, forKey key: String, completion: @escaping (Result<Void, KeychainError>) -> Void)
     func retrieveAndDecryptToken(forKey key: String, completion: @escaping (Result<String, KeychainError>) -> Void)
@@ -69,6 +71,31 @@ final class SecureTokenManager: SecureTokenManagerable {
                 }
             case .failure:
                 print("❌ \(key) 복호화 실패")
+                completion(.failure(.authFailed))
+            }
+        }
+    }
+    
+    func retrieveAndDecryptTokens(forKeys keys: TokenKeys, completion: @escaping (Result<TokenKeys, KeychainError>) -> Void) {
+        keychainService.retrieveData(forKeys: keys) { result in
+            switch result {
+            case .success(let encryptedData):
+                DispatchQueue.global().async { [weak self] in
+                    guard let self else { return }
+                    if let decryptedAccessData = secureEnclaveService.decryptData(encryptData: encryptedData.access, forKey: keys.accessToken),
+                       let decryptedRefreshData = secureEnclaveService.decryptData(encryptData: encryptedData.refresh, forKey: keys.refreshToken),
+                       let accessToken = String(data: decryptedAccessData, encoding: .utf8),
+                       let refreshToken = String(data: decryptedRefreshData, encoding: .utf8) {
+                        print("✅ 복호화된 \(keys.accessToken): \(accessToken)")
+                        print("✅ 복호화된 \(keys.refreshToken): \(refreshToken)")
+                        completion(.success((accessToken, refreshToken)))
+                    } else {
+                        print("❌ \(keys) 복호화 실패")
+                        completion(.failure(.authFailed))
+                    }
+                }
+            case .failure:
+                print("❌ \(keys) 복호화 실패")
                 completion(.failure(.authFailed))
             }
         }

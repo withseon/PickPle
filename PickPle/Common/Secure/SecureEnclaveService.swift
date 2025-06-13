@@ -81,7 +81,7 @@ extension DefaultSecureEnclaveService {
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         
         if status == errSecSuccess {
-            print("🔑 기존 Secure 키 사용")
+            print("🔑 기존 Secure \(key) 키 사용")
             return (item as! SecKey)
         }
         
