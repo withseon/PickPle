@@ -17,10 +17,8 @@ final class DIContainer: ObservableObject {
     
     init() {
         self.locationManager = LocationManager()
-        let interceptor = APIRequestInterceptor()
-        self.networkManager = NetworkManager(interceptor: interceptor)
+        self.networkManager = NetworkManager()
         self.userRepository = DefaultUserRepository(networkManager: networkManager)
         self.storeRepository = DefaultStoreRepository(networkManager: networkManager)
-        interceptor.userRepository = userRepository
     }
 }
