@@ -11,7 +11,7 @@ protocol UserRepository {
     func validateEmail(_ email: String) -> AnyPublisher<Result<Void, NetworkError>, Never>
     func signup(_ param: SignUpParam) -> AnyPublisher<Result<JoinResponse, NetworkError>, Never>
     func loginEmail(_ param: SignInParam) -> AnyPublisher<Result<EmailLoginResponse, NetworkError>, Never>
-    func refresh(_ refreshToken: String, completion: @escaping (Result<Void, KeychainError>) -> Void)
+    func profile() -> AnyPublisher<Result<MyProfileResponse, NetworkError>, Never>
 }
 
 final class DefaultUserRepository: UserRepository {
@@ -26,7 +26,7 @@ final class DefaultUserRepository: UserRepository {
             Task { [weak self] in
                 guard let self else { return }
                 do {
-                    try await networkManager.executeFetch(
+                    try await networkManager.request(
                         target: UserRouter.validateEmail(ValidationEmailRequest(email: email)),
                         responseType: ValidationEmailResponse.self,
                         errorType: UserErrorResponse.self
@@ -56,7 +56,7 @@ final class DefaultUserRepository: UserRepository {
                         phoneNum: param.phoneNum,
                         deviceToken: DeviceToken.value
                     )
-                    let response = try await networkManager.executeFetch(
+                    let response = try await networkManager.request(
                         target: UserRouter.joinEmail(dto),
                         responseType: JoinResponse.self,
                         errorType: UserErrorResponse.self
@@ -84,29 +84,27 @@ final class DefaultUserRepository: UserRepository {
                         password: param.password,
                         deviceToken: DeviceToken.value
                     )
-                    let response = try await networkManager.executeFetch(
+                    let response = try await networkManager.request(
                         target: UserRouter.emailLogin(dto),
                         responseType: EmailLoginResponse.self,
                         errorType: UserErrorResponse.self
                     )
-//                    promise(.success(.success(response)))
                     
                     SecureTokenManager.shared.encryptAndStoreToken(token: response.accessToken, forKey: SecureKey.ACCESS_TOKEN) { result in
                         switch result {
                         case .success:
                             SecureTokenManager.shared.encryptAndStoreToken(token: response.refreshToken, forKey: SecureKey.REFRESH_TOKEN) { result in
                                 switch result {
-                                case .success(let success):
+                                case .success:
                                     promise(.success(.success(response)))
                                 case .failure(let failure):
-                                    print(failure)
+                                    promise(.success(.failure(.unknown(failure))))
                                 }
                             }
                         case .failure(let failure):
-                            print(failure)
+                            promise(.success(.failure(.unknown(failure))))
                         }
                     }
-                    
                 } catch {
                     if case let NetworkError.server(serverError) = error {
                         promise(.success(.failure(.server(serverError))))
@@ -119,37 +117,28 @@ final class DefaultUserRepository: UserRepository {
         .eraseToAnyPublisher()
     }
     
-    func refresh(_ refreshToken: String, completion: @escaping (Result<Void, KeychainError>) -> Void) {
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                let response = try await networkManager.executeFetch(target: AuthRouter.refresh(refreshToken), responseType: RefreshResponse.self, errorType: UserErrorResponse.self)
-                print(1)
-                SecureTokenManager.shared.encryptAndStoreToken(token: response.accessToken, forKey: SecureKey.ACCESS_TOKEN) { result in
-                    print(2)
-                    switch result {
-                    case .success:
-                        print(3)
-                        SecureTokenManager.shared.encryptAndStoreToken(token: response.refreshToken, forKey: SecureKey.REFRESH_TOKEN) { result in
-                            switch result {
-                            case .success:
-                                print(4)
-                                completion(.success(()))
-                            case .failure(let failure):
-                                print(5)
-                                completion(.failure(failure))
-                            }
-                        }
-                    case .failure(let failure):
-                        print(6)
-                        completion(.failure(failure))
+    func profile() -> AnyPublisher<Result<MyProfileResponse, NetworkError>, Never> {
+        return Future { promise in
+            Task { [weak self] in
+                guard let self else { return }
+                do {
+                    let response = try await networkManager.request(
+                        target: UserRouter.myProfile,
+                        responseType: MyProfileResponse.self,
+                        errorType: UserErrorResponse.self
+                    )
+                    promise(.success(.success(response)))
+                } catch {
+                    if case let NetworkError.server(serverError) = error {
+                        promise(.success(.failure(.server(serverError))))
+                    } else {
+                        promise(.success(.failure(.unknown(error))))
                     }
                 }
-            } catch {
-                print(7)
-                print("refresh api fail")
-                completion(.failure(KeychainError.authFailed))  // refresh 토큰 문제 발생
             }
         }
+        .eraseToAnyPublisher()
+    }
+    
     }
 }

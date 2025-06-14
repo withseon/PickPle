@@ -33,7 +33,7 @@ final class DefaultStoreRepository: StoreRepository {
                         next: param.next,
                         limit: nil,
                         orderBy: param.orderBy?.rawValue)
-                    let storeList = try await networkManager.executeFetch(
+                    let storeList = try await networkManager.request(
                         target: StoreRouter.stores(dto),
                         responseType: StoreSummaryListResponse.self,
                         errorType: UserErrorResponse.self
@@ -57,7 +57,7 @@ final class DefaultStoreRepository: StoreRepository {
                 guard let self else { return }
                 do {
                     let dto = PopularStoreRequest(category: category?.title)
-                    let storeList = try await networkManager.executeFetch(
+                    let storeList = try await networkManager.request(
                         target: StoreRouter.popularStores(dto),
                         responseType: PopularStoreListResponse.self,
                         errorType: UserErrorResponse.self)

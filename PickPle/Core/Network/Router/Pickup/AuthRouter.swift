@@ -9,7 +9,7 @@ import Foundation
 import Alamofire
 
 enum AuthRouter {
-    case refresh(_ refreshToken: String)
+    case refresh(_ accessToken: String, _ refreshToken: String)
 }
 
 extension AuthRouter: TargetType {
@@ -43,8 +43,13 @@ extension AuthRouter: TargetType {
     
     var headers: HTTPHeaders? {
         switch self {
-        case .refresh(let refreshToken):
-            return ["RefreshToken": refreshToken]
+        case .refresh(let accessToken, let refreshToken):
+            return [
+                "Content-Type" : "application/json",
+                "Authorization" : accessToken,
+                "RefreshToken" : refreshToken,
+                "SesacKey" : APIKEY.PICKUP
+            ]
         }
     }
 }

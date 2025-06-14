@@ -34,25 +34,14 @@ final class NetworkManager {
             let value = try await request.value
             return value
         } catch {
-            print("🔥 NetworkManager catch error: \(error)")
-            print("🔥 Error type: \(type(of: error))")
-            
             if let error = await request.response.error {
-                print("🔥 Response error: \(error)")
                 if case .requestRetryFailed(let retryError, _) = error {
-                    print("🔥 Retry error: \(retryError)")
                     if let networkError = retryError as? NetworkError {
-                        print("🔥 Network error: \(networkError)")
+                        print("Network error: \(networkError)")
                         throw networkError
                     }
                 }
             }
-
-//            if let error = await request.response.error,
-//               case .requestRetryFailed(let retryError, _) = error,
-//               let error = retryError as? NetworkError {
-//                throw error
-//            }
             
             if let responseData = await request.response.data {
                 let decoder = JSONDecoder()
