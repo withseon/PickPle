@@ -34,7 +34,7 @@ struct CoordinatorView: View {
     
     @StateObject private var loginObserver = LoginObserver()
     @ObservedObject var coordinator: Coordinator
-    private var rootState: RootState { loginObserver.isLogin ? .login : .authenticated(.main) }
+    private var rootState: RootState { loginObserver.isLogin ? .authenticated(.main) : .login }
     
     var body: some View {
         NavigationStack(path: Binding { coordinator.path } set: { _ in }) {
@@ -48,9 +48,12 @@ struct CoordinatorView: View {
         }
         .environmentObject(loginObserver)
         .task {
-            // TODO: 내 프로필 조회 API 호출
-            // 리프레시 토큰 만료 시, 자동 로그인 실패
-            // 로그인 화면으로
+            do {
+                let _ = try await coordinator.diContainer.userRepository.profile()
+                loginObserver.isLogin = true
+            } catch {
+                loginObserver.isLogin = false
+            }
         }
     }
     

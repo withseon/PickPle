@@ -12,6 +12,7 @@ protocol UserRepository {
     func signup(_ param: SignUpParam) -> AnyPublisher<Result<JoinResponse, NetworkError>, Never>
     func loginEmail(_ param: SignInParam) -> AnyPublisher<Result<EmailLoginResponse, NetworkError>, Never>
     func profile() -> AnyPublisher<Result<MyProfileResponse, NetworkError>, Never>
+    func profile() async throws -> MyProfileResponse
 }
 
 final class DefaultUserRepository: UserRepository {
@@ -140,5 +141,11 @@ final class DefaultUserRepository: UserRepository {
         .eraseToAnyPublisher()
     }
     
+    func profile() async throws -> MyProfileResponse {
+        return try await networkManager.request(
+            target: UserRouter.myProfile,
+            responseType: MyProfileResponse.self,
+            errorType: UserErrorResponse.self
+        )
     }
 }
