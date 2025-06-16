@@ -41,7 +41,7 @@ extension StoreSummaryListResponse.StoreSummaryResponse {
             storeImageUrls: storeImageUrls,
             isPicchelin: isPicchelin,
             isPick: isPick,
-            pickCount: "\(pickCount)개",
+            pickCount: pickCount,
             hashTags: hashTags,
             totalRating: "\(totalRating)",
             totalOrderCount: "\(totalOrderCount)회",

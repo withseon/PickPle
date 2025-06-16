@@ -10,6 +10,7 @@ import Combine
 protocol StoreRepository {
     func storeList(_ param: StoreListParam) -> AnyPublisher<Result<StoreSummaryListResponse, NetworkError>, Never>
     func popularStore(_ category: StoreCategory?) -> AnyPublisher<Result<PopularStoreListResponse, NetworkError>, Never>
+    func likeStore(_ storeId: String, _ isPick: Bool) -> AnyPublisher<Result<StoreLikeResponse, NetworkError>, Never>
 }
 
 final class DefaultStoreRepository: StoreRepository {
@@ -62,6 +63,29 @@ final class DefaultStoreRepository: StoreRepository {
                         responseType: PopularStoreListResponse.self,
                         errorType: UserErrorResponse.self)
                     promise(.success(.success(storeList)))
+                } catch {
+                    if case let NetworkError.server(serverError) = error {
+                        promise(.success(.failure(.server(serverError))))
+                    } else {
+                        promise(.success(.failure(.unknown(error))))
+                    }
+                }
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+    
+    func likeStore(_ storeId: String, _ isPick: Bool) -> AnyPublisher<Result<StoreLikeResponse, NetworkError>, Never> {
+        return Future { promise in
+            Task { [weak self] in
+                guard let self else { return }
+                do {
+                    let likeStore = try await networkManager.request(
+                        target: StoreRouter.likeStore(storeId, StoreLikeRequest(likeStatus: isPick)),
+                        responseType: StoreLikeResponse.self,
+                        errorType: UserErrorResponse.self
+                    )
+                    promise(.success(.success(likeStore)))
                 } catch {
                     if case let NetworkError.server(serverError) = error {
                         promise(.success(.failure(.server(serverError))))

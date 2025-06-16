@@ -37,6 +37,7 @@ extension MainViewModel {
         let orderSheetTrigger = PassthroughSubject<Void, Never>()
         let selectedOrderTigger = PassthroughSubject<StoreOrder, Never>()
         let selectedPickFilterTrigger = PassthroughSubject<PickFilter, Never>()
+        let likeStoreTrigger = PassthroughSubject<(id: String, isPick: Bool), Never>()
     }
 
     struct Output {
@@ -68,8 +69,8 @@ extension MainViewModel {
         input.selectedLocationTrigger
             .sink(with: self) { owner, _ in
                 owner.output.address = owner.setAddress()
-                
-                // TODO: 서버통신
+                owner.fetchStoreData()
+                owner.fetchPopularStoreData()
             }
             .store(in: &cancellables)
         
@@ -78,10 +79,8 @@ extension MainViewModel {
                 if owner.output.selectedCategory == category {
                     owner.output.selectedCategory = nil
                     owner.storeListParam.category = nil
-                    owner.storeListParam.category = nil
                 } else {
                     owner.output.selectedCategory = category
-                    owner.storeListParam.category = category
                     owner.storeListParam.category = category
                 }
                 owner.fetchStoreData()
@@ -114,6 +113,20 @@ extension MainViewModel {
                     owner.output.selectedPickFilters.insert(filter)
                 }
                 owner.filterStoreData()
+            }
+            .store(in: &cancellables)
+        
+        input.likeStoreTrigger
+            .sink(with: self) { owner, storeInfo in
+                owner.updatePopularStorePick(storeInfo.id)
+                owner.updateSummaryStorePick(storeInfo.id)
+            }
+            .store(in: &cancellables)
+        
+        input.likeStoreTrigger
+            .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
+            .sink(with: self) { owner, storeInfo in
+                owner.likeStore(id: storeInfo.id, isPick: !storeInfo.isPick)
             }
             .store(in: &cancellables)
     }
@@ -168,9 +181,44 @@ extension MainViewModel {
             if output.selectedPickFilters.contains(.myPick) {
                 isInclude = isInclude && store.isPick
             }
-            
             return isInclude
         }
+    }
+    
+    private func likeStore(id: String, isPick: Bool) {
+        let publish = storeRepository.likeStore(id, isPick)
+        publish
+            .receive(on: DispatchQueue.main)
+            .sink(with: self) { owner, result in
+                switch result {
+                case .success(_):
+                    break
+                case .failure(let error):
+                    owner.updatePopularStorePick(id)
+                    owner.updateSummaryStorePick(id)
+                    print(error)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updatePopularStorePick(_ storeId: String) {
+        guard let index = allPopularStoreData.firstIndex(where: { $0.storeId == storeId }) else { return }
+        allPopularStoreData[index].isPick.toggle()
+        let temp = allPopularStoreData[index].isPick ? 1 : -1
+        allPopularStoreData[index].pickCount += temp
+        
+        output.popularStores[index].isPick.toggle()
+        output.popularStores[index].pickCount += temp
+    }
+    
+    private func updateSummaryStorePick(_ storeId: String) {
+        guard let index = allStoreData.firstIndex(where: { $0.storeId == storeId }) else { return }
+        allStoreData[index].isPick.toggle()
+        let temp = allStoreData[index].isPick ? 1 : -1
+        allStoreData[index].pickCount += temp
+        
+        filterStoreData()
     }
 }
 
@@ -184,6 +232,7 @@ extension MainViewModel {
         case orderSheet
         case selectedOrder(_ order: StoreOrder)
         case selectedPickFilter(_ filter: PickFilter)
+        case likeStore(_ id: String, _ isPick: Bool)
     }
 
     func action(_ action: Action) {
@@ -209,6 +258,9 @@ extension MainViewModel {
         case .selectedPickFilter(let filter):
             input.selectedPickFilterTrigger
                 .send(filter)
+        case .likeStore(let id, let isPick):
+            input.likeStoreTrigger
+                .send((id, isPick))
         }
     }
 }

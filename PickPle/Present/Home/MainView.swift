@@ -41,55 +41,8 @@ private struct MainContentView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            VStack(spacing: 8) {
-                HStack {
-                    LocationButton(address: viewModel.output.address)
-                        .wrapToButton {
-                            viewModel.action(.mapSheet)
-                        }
-                        .buttonStyle(.plain)
-                    Spacer()
-                }
-                SearchTextField("검색어를 입력해주세요", text: $searchText)
-                SearchListView()
-                    .wrapToButton {
-                        // TODO: 검색 결과 이동
-                    }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 4)
-            
-            List {
-                Section {
-                    ForEach(viewModel.output.storeSummaries, id: \.storeId) { store in
-                        VStack(spacing: 0) {
-                            StoreView(store: store)
-                                .padding(20)
-                            // TODO: 상세뷰 이동
-                            if store != viewModel.output.storeSummaries.last {
-                                Rectangle()
-                                    .frame(height: 1)
-                                    .foregroundStyle(.gray30)
-                                    .padding(.horizontal, 20)
-                            }
-                        }
-                    }
-                } header: {
-                    StoreHeaderView(viewModel: viewModel)
-                    .background(.gray15)
-                }
-                .background(.gray15)
-                .listRowInsets(.init())
-                .listRowSeparator(.hidden)
-            }
-            .clipShape(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 20,
-                    topTrailingRadius: 20
-                )
-            )
-            .listStyle(.grouped)
-            .scrollContentBackground(.hidden)
+            LocationAndSearchView(viewModel: viewModel)
+            StoreListView(viewModel: viewModel)
             .refreshable {
                 print("새로고침")
             }
@@ -123,39 +76,98 @@ private struct MainContentView: View {
     }
 }
 
-// MARK: - 현재 위치 선택 버튼
-private struct LocationButton: View {
-    let address: String
+// MARK: - 위치 & 검색 뷰
+private struct LocationAndSearchView: View {
+    @ObservedObject var viewModel: MainViewModel
+    @State var searchText = ""
     
     var body: some View {
-        HStack {
-            Image("location")
-                .iconFrame(24)
-            Text(address)
-                .font(.pretendard(.body1))
-            Image("detail")
-                .iconFrame(24)
+        VStack(spacing: 8) {
+            HStack {
+                LocationButton(address: viewModel.output.address)
+                    .wrapToButton {
+                        viewModel.action(.mapSheet)
+                    }
+                    .buttonStyle(.plain)
+                Spacer()
+            }
+            SearchTextField("검색어를 입력해주세요", text: $searchText)
+            SearchListView()
+                .wrapToButton {
+                    // TODO: 검색 결과 이동
+                }
         }
-        .foregroundStyle(.black)
+        .padding(.horizontal, 20)
+        .padding(.top, 4)
+    }
+    
+    // MARK: - 현재 위치 선택 버튼
+    private struct LocationButton: View {
+        let address: String
+        
+        var body: some View {
+            HStack {
+                Image("location")
+                    .iconFrame(24)
+                Text(address)
+                    .font(.pretendard(.body1))
+                Image("detail")
+                    .iconFrame(24)
+            }
+            .foregroundStyle(.black)
+        }
+    }
+    
+    // MARK: - 인기검색어 뷰
+    private struct SearchListView: View {
+        var body: some View {
+            HStack(spacing: 8) {
+                HStack(spacing: 0) {
+                    Image("sparkle")
+                        .iconFrame(12)
+                    Text("인기검색어")
+                        .font(.pretendard(.caption1))
+                }
+                .foregroundStyle(.deepSprout)
+                Text("1 스타벅스")
+                    .font(.pretendard(.caption1))
+                    .foregroundStyle(.blackSprout)
+                Spacer()
+            }
+        }
     }
 }
 
-// MARK: - 인기검색어 뷰
-private struct SearchListView: View {
+// MARK: - 가게 리스트 뷰
+private struct StoreListView: View {
+    @ObservedObject var viewModel: MainViewModel
+    
     var body: some View {
-        HStack(spacing: 8) {
-            HStack(spacing: 0) {
-                Image("sparkle")
-                    .iconFrame(12)
-                Text("인기검색어")
-                    .font(.pretendard(.caption1))
+        List {
+            Section {
+                ForEach(viewModel.output.storeSummaries, id: \.storeId) { store in
+                    VStack(spacing: 0) {
+                        StoreView(viewModel: viewModel, store: store)
+                            .padding(20)
+                        // TODO: 상세뷰 이동
+                        if store != viewModel.output.storeSummaries.last {
+                            Rectangle()
+                                .frame(height: 1)
+                                .foregroundStyle(.gray30)
+                                .padding(.horizontal, 20)
+                        }
+                    }
+                    .background(.gray15)
+                }
+            } header: {
+                StoreHeaderView(viewModel: viewModel)
             }
-            .foregroundStyle(.deepSprout)
-            Text("1 스타벅스")
-                .font(.pretendard(.caption1))
-                .foregroundStyle(.blackSprout)
-            Spacer()
+            .background(.clear)
+            .listRowInsets(.init())
+            .listRowSeparator(.hidden)
         }
+        .listStyle(.grouped)
+        .scrollContentBackground(.hidden)
     }
 }
 
@@ -174,22 +186,24 @@ private struct StoreHeaderView: View {
             .padding(.horizontal, 20)
             
             VStack {
-                HStack {
-                    Text("실시간 인기 맛집")
-                        .font(.pretendard(.body2))
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                
-                ScrollView(.horizontal) {
+                if !viewModel.output.popularStores.isEmpty {
                     HStack {
-                        ForEach(viewModel.output.popularStores, id: \.storeId) { store in
-                            PopularStoreView(store: store)
-                        }
+                        Text("실시간 인기 맛집")
+                            .font(.pretendard(.body2))
+                        Spacer()
                     }
                     .padding(.horizontal, 20)
+                    
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(viewModel.output.popularStores, id: \.storeId) { store in
+                                PopularStoreView(viewModel: viewModel, store: store)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    .scrollIndicators(.never)
                 }
-                .scrollIndicators(.never)
             }
             
             VStack(spacing: 8) {
@@ -219,80 +233,81 @@ private struct StoreHeaderView: View {
             .padding(.horizontal, 20)
         }
         .padding(.vertical)
+        .background(.gray15)
+        .clipShape(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 20,
+                topTrailingRadius: 20
+            )
+        )
     }
-}
-
-// MARK: - 카데고리 버튼
-private struct CategoryButton: View {
-    @ObservedObject var viewModel: MainViewModel
-    let category: StoreCategory
     
-    var body: some View {
-        let isSelected = viewModel.output.selectedCategory == category
+    // MARK: - 카데고리 버튼
+    private struct CategoryButton: View {
+        @ObservedObject var viewModel: MainViewModel
+        let category: StoreCategory
         
-        VStack(alignment: .center) {
-            Image(category.icon)
-                .renderingMode(.original)
-                .frame(width: 56, height: 56)
-                .background(.gray0)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(isSelected ? .blackSprout : .gray30, lineWidth: isSelected ? 1.5 : 1)
-                )
+        var body: some View {
+            let isSelected = viewModel.output.selectedCategory == category
             
-            Text(category.title)
-                .font(.pretendard(.body3))
-                .foregroundStyle(isSelected ? .blackSprout : .gray60)
-        }
-        .frame(maxWidth: .infinity)
-        .wrapToButton {
-            viewModel.action(.selectedCategory(category))
+            VStack(alignment: .center) {
+                Image(category.icon)
+                    .renderingMode(.original)
+                    .frame(width: 56, height: 56)
+                    .background(.gray0)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(isSelected ? .blackSprout : .gray30, lineWidth: isSelected ? 1.5 : 1)
+                    )
+                
+                Text(category.title)
+                    .font(.pretendard(.body3))
+                    .foregroundStyle(isSelected ? .blackSprout : .gray60)
+            }
+            .frame(maxWidth: .infinity)
+            .wrapToButton {
+                viewModel.action(.selectedCategory(category))
+            }
         }
     }
-}
-
-// MARK: - 픽업 가게 필터 버튼
-struct PickStoreFilterButton: View {
-    @ObservedObject var viewModel: MainViewModel
-    var filter: PickFilter
     
-    var body: some View {
-        let isSelected = viewModel.output.selectedPickFilters.contains(filter)
-        HStack(spacing: 4) {
-            Image(systemName: isSelected ? "checkmark.square.fill" : "checkmark.square")
-            Text(filter.title)
-                .font(.pretendard(.caption1))
-        }
-        .foregroundStyle(isSelected ? .blackSprout : .brightSprout)
-        .wrapToButton {
-            viewModel.action(.selectedPickFilter(filter))
+    // MARK: - 픽업 가게 필터 버튼
+    struct PickStoreFilterButton: View {
+        @ObservedObject var viewModel: MainViewModel
+        var filter: PickFilter
+        
+        var body: some View {
+            let isSelected = viewModel.output.selectedPickFilters.contains(filter)
+            HStack(spacing: 4) {
+                Image(systemName: isSelected ? "checkmark.square.fill" : "checkmark.square")
+                Text(filter.title)
+                    .font(.pretendard(.caption1))
+            }
+            .foregroundStyle(isSelected ? .blackSprout : .brightSprout)
+            .wrapToButton {
+                viewModel.action(.selectedPickFilter(filter))
+            }
         }
     }
 }
 
 // MARK: - 실시간 인기 가게 셀
 private struct PopularStoreView: View {
+    @ObservedObject var viewModel: MainViewModel
     let store: PopularStore
-    @State var isLiked: Bool
-    
-    init(store: PopularStore) {
-        self.store = store
-        self.isLiked = store.isPick
-    }
     
     var body: some View {
         ZStack(alignment: .bottom) {
             AsyncImageView(url: "https://picsum.photos/id/237/200/300", width: 240, height: 176)
                 .clipShape(TopLeftInverseCurveRectangle(cornerRadius: 16))
                 .overlay(alignment: .topLeading) {
-                    Image(isLiked ? "like.fill" : "like")
+                    Image(store.isPick ? "like.fill" : "like")
                         .iconFrame(24)
                         .padding(4)
-                        .foregroundStyle(isLiked ? .blackSprout : .gray45)
+                        .foregroundStyle(store.isPick ? .blackSprout : .gray45)
                         .wrapToButton {
-                            print("TODO: 가게: 좋아요")
-                            isLiked.toggle()
+                            viewModel.action(.likeStore(store.storeId, store.isPick))
                         }
                         .buttonStyle(.plain)
                 }
@@ -311,15 +326,15 @@ private struct PopularStoreView: View {
                         Image("like.fill")
                             .iconFrame(16)
                             .foregroundStyle(.brightForsythia)
-                        Text(store.pickCount)
+                        Text("\(store.pickCount)개")
                             .font(.pretendard(.body3))
                     }
                     Spacer()
                 }
                 HStack {
-                    detailInfoText(icon: "distance", text: store.distance)
-                    detailInfoText(icon: "time", text: store.close)
-                    detailInfoText(icon: "run", text: store.totalOrderCount)
+                    DetailInfoText(icon: "distance", text: store.distance)
+                    DetailInfoText(icon: "time", text: store.close)
+                    DetailInfoText(icon: "run", text: store.totalOrderCount)
                     Spacer()
                 }
             }
@@ -331,14 +346,19 @@ private struct PopularStoreView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
     
-    private func detailInfoText(icon: String, text: String) -> some View {
-        HStack(spacing: 0) {
-            Image(icon)
-                .iconFrame(16)
-                .foregroundStyle(.blackSprout)
-            Text(text)
-                .font(.pretendard(.body3))
-                .foregroundStyle(.gray75)
+    struct DetailInfoText: View {
+        let icon: String
+        let text: String
+        
+        var body: some View {
+            HStack(spacing: 0) {
+                Image(icon)
+                    .iconFrame(16)
+                    .foregroundStyle(.blackSprout)
+                Text(text)
+                    .font(.pretendard(.body3))
+                    .foregroundStyle(.gray75)
+            }
         }
     }
     
@@ -414,13 +434,8 @@ private struct PopularStoreView: View {
 
 // MARK: - 가게 리스트 셀
 private struct StoreView: View {
+    @ObservedObject var viewModel: MainViewModel
     let store: StoreSummary
-    @State var isLiked = false
-    
-    init(store: StoreSummary) {
-        self.store = store
-        self.isLiked = store.isPick
-    }
     
     var body: some View {
         VStack {
@@ -434,13 +449,12 @@ private struct StoreView: View {
                 isPickchelin: store.isPicchelin
             )
             .overlay(alignment: .topLeading) {
-                Image(isLiked ? "like.fill" : "like")
+                Image(store.isPick ? "like.fill" : "like")
                     .iconFrame(24)
                     .padding(8)
-                    .foregroundStyle(isLiked ? .blackSprout : .gray45)
+                    .foregroundStyle(store.isPick ? .blackSprout : .gray45)
                     .wrapToButton {
-                        print("TODO: 가게: 좋아요")
-                        isLiked.toggle()
+                        viewModel.action(.likeStore(store.storeId, store.isPick))
                     }
                     .buttonStyle(.plain)
             }
@@ -449,14 +463,14 @@ private struct StoreView: View {
                     Text(store.name)
                         .lineLimit(1)
                         .font(.pretendard(.body1))
-                    mainInfoText(icon: "like.fill", text: store.pickCount)
-                    mainInfoText(icon: "like.fill", text: store.totalRating, subText: store.totalReviewCount)
+                    MainInfoText(icon: "like.fill", text: "\(store.pickCount)개")
+                    MainInfoText(icon: "like.fill", text: store.totalRating, subText: store.totalReviewCount)
                     Spacer()
                 }
                 HStack {
-                    detailInfoText(icon: "distance", text: store.distance)
-                    detailInfoText(icon: "time", text: store.close)
-                    detailInfoText(icon: "run", text: store.totalOrderCount)
+                    DetailInfoText(icon: "distance", text: store.distance)
+                    DetailInfoText(icon: "time", text: store.close)
+                    DetailInfoText(icon: "run", text: store.totalOrderCount)
                     Spacer()
                 }
             }
@@ -474,29 +488,46 @@ private struct StoreView: View {
         }
     }
     
-    private func mainInfoText(icon: String, text: String, subText: String? = nil) -> some View {
-        HStack(spacing: 0) {
-            Image(icon)
-                .iconFrame(20)
-                .foregroundStyle(.brightForsythia)
-            Text(text)
-                .font(.pretendard(.body1))
-            if let text = subText {
+    private struct MainInfoText: View {
+        let icon: String
+        let text: String
+        let subText: String?
+        
+        init(icon: String, text: String, subText: String? = nil) {
+            self.icon = icon
+            self.text = text
+            self.subText = subText
+        }
+        
+        var body: some View {
+            HStack(spacing: 0) {
+                Image(icon)
+                    .iconFrame(20)
+                    .foregroundStyle(.brightForsythia)
                 Text(text)
                     .font(.pretendard(.body1))
-                    .foregroundStyle(.gray60)
+                if let text = subText {
+                    Text(text)
+                        .font(.pretendard(.body1))
+                        .foregroundStyle(.gray60)
+                }
             }
         }
     }
     
-    private func detailInfoText(icon: String, text: String) -> some View {
-        HStack(spacing: 0) {
-            Image(icon)
-                .iconFrame(20)
-                .foregroundStyle(.blackSprout)
-            Text(text)
-                .font(.pretendard(.body2))
-                .foregroundStyle(.gray60)
+    private struct DetailInfoText: View {
+        let icon: String
+        let text: String
+        
+        var body: some View {
+            HStack(spacing: 0) {
+                Image(icon)
+                    .iconFrame(20)
+                    .foregroundStyle(.blackSprout)
+                Text(text)
+                    .font(.pretendard(.body2))
+                    .foregroundStyle(.gray60)
+            }
         }
     }
 }

@@ -39,7 +39,7 @@ extension PopularStoreListResponse.PopularStoreResponse {
             mainImageUrl: storeImageUrls[0],
             isPicchelin: isPicchelin,
             isPick: isPick,
-            pickCount: "\(pickCount)개",
+            pickCount: pickCount,
             totalOrderCount: "\(totalOrderCount)회",
             distance: FormatHelper.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude)
         )

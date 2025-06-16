@@ -14,8 +14,8 @@ struct StoreSummary: Equatable {
     let close: String
     let storeImageUrls: [String]
     let isPicchelin: Bool
-    let isPick: Bool
-    let pickCount: String
+    var isPick: Bool
+    var pickCount: Int
     let hashTags: [String]
     let totalRating: String
     let totalOrderCount: String

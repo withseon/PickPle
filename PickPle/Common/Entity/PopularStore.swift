@@ -14,8 +14,8 @@ struct PopularStore {
     let close: String
     let mainImageUrl: String
     let isPicchelin: Bool
-    let isPick: Bool
-    let pickCount: String
+    var isPick: Bool
+    var pickCount: Int
     let totalOrderCount: String
     let distance: String
 }

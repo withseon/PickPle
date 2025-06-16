@@ -11,6 +11,7 @@ import Alamofire
 enum StoreRouter {
     case stores(_ request: StoreSummaryListRequest)
     case popularStores(_ request: PopularStoreRequest)
+    case likeStore(_ storeId: String, _ request: StoreLikeRequest)
     case storeDetail(_ storeId: String)
 }
 
@@ -28,6 +29,8 @@ extension StoreRouter: TargetType {
             return "/v1/stores"
         case .popularStores:
             return "/v1/stores/popular-stores"
+        case .likeStore(let storeId, _):
+            return "/v1/stores/\(storeId)/like"
         case .storeDetail(let storeId):
             return "/v1/stores/\(storeId)"
         }
@@ -37,6 +40,8 @@ extension StoreRouter: TargetType {
         switch self {
         case .stores, .popularStores, .storeDetail:
             return .get
+        case .likeStore:
+            return .post
         }
     }
     
@@ -46,6 +51,8 @@ extension StoreRouter: TargetType {
             return .query(request)
         case .popularStores(let request):
             return .query(request)
+        case .likeStore(_, let request):
+            return .body(request)
         case .storeDetail:
             return nil
         }
