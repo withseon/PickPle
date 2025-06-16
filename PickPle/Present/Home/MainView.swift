@@ -149,7 +149,12 @@ private struct StoreListView: View {
                     VStack(spacing: 0) {
                         StoreView(viewModel: viewModel, store: store)
                             .padding(20)
-                        // TODO: 상세뷰 이동
+                            .onAppear {
+                                if !viewModel.output.storeSummaries.isEmpty,
+                                   store == viewModel.output.storeSummaries.last {
+                                    viewModel.action(.pagination)
+                                }
+                            }
                         if store != viewModel.output.storeSummaries.last {
                             Rectangle()
                                 .frame(height: 1)

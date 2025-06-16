@@ -10,9 +10,10 @@ import Foundation
 struct StoreListParam {
     var category: StoreCategory?
     var next: String?
+    var limit: Int?
     var orderBy: StoreOrder?
     
     static var empty: Self {
-        return .init(category: nil, next: nil, orderBy: nil)
+        return .init(category: nil, next: nil, limit: 20, orderBy: nil)
     }
 }

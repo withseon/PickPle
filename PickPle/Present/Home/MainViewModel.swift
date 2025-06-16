@@ -19,6 +19,8 @@ final class MainViewModel: BaseViewModel, ViewModelType {
     
     private var allPopularStoreData = [PopularStore]()
     private var allStoreData = [StoreSummary]()
+    
+    private var isPaginationEnabled = false
 
     init(storeRepository: StoreRepository) {
         self.storeRepository = storeRepository
@@ -38,6 +40,7 @@ extension MainViewModel {
         let selectedOrderTigger = PassthroughSubject<StoreOrder, Never>()
         let selectedPickFilterTrigger = PassthroughSubject<PickFilter, Never>()
         let likeStoreTrigger = PassthroughSubject<(id: String, isPick: Bool), Never>()
+        let dataPagingTrigger = PassthroughSubject<Void, Never>()
     }
 
     struct Output {
@@ -69,6 +72,7 @@ extension MainViewModel {
         input.selectedLocationTrigger
             .sink(with: self) { owner, _ in
                 owner.output.address = owner.setAddress()
+                owner.storeListParam.next = nil
                 owner.fetchStoreData()
                 owner.fetchPopularStoreData()
             }
@@ -79,9 +83,11 @@ extension MainViewModel {
                 if owner.output.selectedCategory == category {
                     owner.output.selectedCategory = nil
                     owner.storeListParam.category = nil
+                    owner.storeListParam.next = nil
                 } else {
                     owner.output.selectedCategory = category
                     owner.storeListParam.category = category
+                    owner.storeListParam.next = nil
                 }
                 owner.fetchStoreData()
                 owner.fetchPopularStoreData()
@@ -99,6 +105,7 @@ extension MainViewModel {
                 if owner.output.selectedOrder != order {
                     owner.output.selectedOrder = order
                     owner.storeListParam.orderBy = order
+                    owner.storeListParam.next = nil
                     owner.fetchStoreData()
                 }
                 owner.output.showOrderSheet = false
@@ -129,6 +136,14 @@ extension MainViewModel {
                 owner.likeStore(id: storeInfo.id, isPick: !storeInfo.isPick)
             }
             .store(in: &cancellables)
+        
+        input.dataPagingTrigger
+            .sink(with: self) { owner, _ in
+                if owner.isPaginationEnabled {
+                    owner.fetchStoreData()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func setAddress() -> String {
@@ -146,8 +161,17 @@ extension MainViewModel {
             .sink(with: self) { owner, result in
                 switch result {
                 case .success(let success):
-                    owner.allStoreData = success.data.map { $0.asStoreSummary }
+                    if let _ = owner.storeListParam.next {
+                        owner.allStoreData.append(contentsOf: success.data.map { $0.asStoreSummary })
+                    } else {
+                        owner.allStoreData = success.data.map { $0.asStoreSummary }
+                    }
+                    owner.storeListParam.next = success.nextCursor
                     owner.filterStoreData()
+                    print("!!!!!!!!!!!! \(owner.output.storeSummaries.count)")
+                    if let limit = owner.storeListParam.limit {
+                        owner.isPaginationEnabled = success.data.count >= limit
+                    }
                 case .failure(let error):
                     print(error)
                 }
@@ -233,6 +257,7 @@ extension MainViewModel {
         case selectedOrder(_ order: StoreOrder)
         case selectedPickFilter(_ filter: PickFilter)
         case likeStore(_ id: String, _ isPick: Bool)
+        case pagination
     }
 
     func action(_ action: Action) {
@@ -261,6 +286,9 @@ extension MainViewModel {
         case .likeStore(let id, let isPick):
             input.likeStoreTrigger
                 .send((id, isPick))
+        case .pagination:
+            input.dataPagingTrigger
+                .send(())
         }
     }
 }

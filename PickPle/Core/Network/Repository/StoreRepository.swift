@@ -32,7 +32,7 @@ final class DefaultStoreRepository: StoreRepository {
                         longitude: Float(longitude),
                         latitude: Float(latitude),
                         next: param.next,
-                        limit: nil,
+                        limit: param.limit,
                         orderBy: param.orderBy?.rawValue)
                     let storeList = try await networkManager.request(
                         target: StoreRouter.stores(dto),
