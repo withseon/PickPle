@@ -8,7 +8,7 @@
 import Foundation
 import Alamofire
 
-private enum API {
+enum API {
     static let session: Session = {
         let configuration = URLSessionConfiguration.af.default
         let apiLogger = APIEventLogger()
@@ -24,7 +24,6 @@ final class NetworkManager {
         responseType: T.Type,
         errorType: E.Type
     ) async throws -> T {
-        print("🦊", #function, target)
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let request = API.session.request(target)

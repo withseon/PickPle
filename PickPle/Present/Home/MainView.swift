@@ -311,7 +311,7 @@ private struct PopularStoreView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            AsyncImageView(url: "https://picsum.photos/id/237/200/300", width: 240, height: 176)
+            CachedAsyncImage(path: store.mainImageUrl, width: 240, height: 176)
                 .clipShape(TopLeftInverseCurveRectangle(cornerRadius: 16))
                 .overlay(alignment: .topLeading) {
                     Image(store.isPick ? "like.fill" : "like")
@@ -452,11 +452,7 @@ private struct StoreView: View {
     var body: some View {
         VStack {
             StoreGalleryImageView(
-                imageUrls: [
-                    "https://picsum.photos/id/10/400/300",
-                    "https://picsum.photos/id/20/400/300",
-                    "https://picsum.photos/id/30/400/300"
-                ],
+                imageUrls: store.storeImageUrls,
                 ratio: 5/2,
                 isPickchelin: store.isPicchelin
             )

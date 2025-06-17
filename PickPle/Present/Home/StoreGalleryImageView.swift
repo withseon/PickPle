@@ -17,25 +17,25 @@ struct StoreGalleryImageView: View {
             Group {
                 switch imageUrls.count {
                 case 1:
-                    singleImageView(
+                    SingleImageView(
                         urls: imageUrls,
                         geometry: geometry,
                         isPickchelin: isPickchelin
                     )
                 case 2:
-                    twoImagesView(
+                    TwoImagesView(
                         urls: imageUrls,
                         geometry: geometry,
                         isPickchelin: isPickchelin
                     )
                 case 3...:
-                    threeImagesView(
+                    ThreeImagesView(
                         urls: imageUrls,
                         geometry: geometry,
                         isPickchelin: isPickchelin
                     )
                 default:
-                    emptyStateView()
+                    EmptyStateView(isPickchelin: isPickchelin)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
@@ -44,96 +44,134 @@ struct StoreGalleryImageView: View {
     }
     
     // MARK: - 1개 이미지 레이아웃
-    private func singleImageView(
-        urls: [String],
-        geometry: GeometryProxy,
-        isPickchelin: Bool
-    ) -> some View {
-        print(#function)
-        return AsyncImageView(url: urls[0], width: geometry.size.width, height: geometry.size.height)
-            .cornerRadius(12)
-            .overlay(alignment: .topTrailing) {
-                PickChelinTagView()
-                    .padding(8)
-            }
+    private struct SingleImageView: View {
+        let urls: [String]
+        let geometry: GeometryProxy
+        let isPickchelin: Bool
+        
+        var body: some View {
+            CachedAsyncImage(path: urls[0], width: geometry.size.width, height: geometry.size.height)
+                .cornerRadius(12)
+                .overlay(alignment: .topTrailing) {
+                    PickChelinTagView()
+                        .padding(8)
+                }
+        }
     }
     
     // MARK: - 2개 이미지 레이아웃
-    private func twoImagesView(
-        urls: [String],
-        geometry: GeometryProxy,
-        isPickchelin: Bool
-    ) -> some View {
-        print(#function)
-        let width = geometry.size.width - 8
+    private struct TwoImagesView: View {
+        let urls: [String]
+        let geometry: GeometryProxy
+        let isPickchelin: Bool
         
-        return HStack(spacing: 8) {
-            AsyncImageView(url: urls[0], width: width * 0.65, height: geometry.size.height)
-                .cornerRadius(12)
-                .overlay(alignment: .topTrailing) {
-                    if isPickchelin {
-                        PickChelinTagView()
-                            .padding(8)
+        var body: some View {
+            let width = geometry.size.width - 4
+            return HStack(spacing: 4) {
+                CachedAsyncImage(path: urls[0],width: width * 0.65, height: geometry.size.height)
+                    .clipShape(
+                        .rect(
+                            topLeadingRadius: 12,
+                            bottomLeadingRadius: 12,
+                            bottomTrailingRadius: 4,
+                            topTrailingRadius: 4
+                        )
+                    )
+                    .overlay(alignment: .topTrailing) {
+                        if isPickchelin {
+                            PickChelinTagView()
+                                .padding(8)
+                        }
                     }
-                }
-            
-            AsyncImageView(url: urls[1], width: width * 0.35, height: geometry.size.height)
-                .cornerRadius(12)
+                CachedAsyncImage(path: urls[1], width: width * 0.35, height: geometry.size.height)
+                    .clipShape(
+                        .rect(
+                            topLeadingRadius: 4,
+                            bottomLeadingRadius: 4,
+                            bottomTrailingRadius: 12,
+                            topTrailingRadius: 12
+                        )
+                    )
+            }
         }
     }
     
     // MARK: - 3개 이미지 레이아웃
-    private func threeImagesView(
-        urls: [String],
-        geometry: GeometryProxy,
-        isPickchelin: Bool
-    ) -> some View {
-        print(#function)
-        let width = geometry.size.width - 8
-        let rightHeight = (geometry.size.height - 8) / 2
+    private struct ThreeImagesView: View {
+        let urls: [String]
+        let geometry: GeometryProxy
+        let isPickchelin: Bool
         
-        return HStack(spacing: 8) {
-            AsyncImageView(url: urls[0], width: width * 0.65, height: geometry.size.height)
-                .cornerRadius(12)
-                .overlay(alignment: .topTrailing) {
-                    if isPickchelin {
-                        PickChelinTagView()
-                            .padding(8)
-                    }
-                }
+        var body: some View {
+            let width = geometry.size.width - 4
+            let rightHeight = (geometry.size.height - 4) / 2
             
-            VStack(spacing: 8) {
-                AsyncImageView(url: urls[1], width: width * 0.35, height: rightHeight)
-                    .cornerRadius(12)
+            HStack(spacing: 4) {
+                CachedAsyncImage(path: urls[0], width: width * 0.65, height: geometry.size.height)
+                    .clipShape(
+                        .rect(
+                            topLeadingRadius: 12,
+                            bottomLeadingRadius: 12,
+                            bottomTrailingRadius: 4,
+                            topTrailingRadius: 4
+                        )
+                    )
+                    .overlay(alignment: .topTrailing) {
+                        if isPickchelin {
+                            PickChelinTagView()
+                                .padding(8)
+                        }
+                    }
                 
-                AsyncImageView(url: urls[2], width: width * 0.35, height: rightHeight)
-                    .cornerRadius(12)
+                VStack(spacing: 4) {
+                    CachedAsyncImage(path: urls[1], width: width * 0.35, height: rightHeight)
+                        .clipShape(
+                            .rect(
+                                topLeadingRadius: 4,
+                                bottomLeadingRadius: 4,
+                                bottomTrailingRadius: 4,
+                                topTrailingRadius: 12
+                            )
+                        )
+                    CachedAsyncImage(path: urls[2], width: width * 0.35, height: rightHeight)
+                        .clipShape(
+                            .rect(
+                                topLeadingRadius: 4,
+                                bottomLeadingRadius: 4,
+                                bottomTrailingRadius: 12,
+                                topTrailingRadius: 4
+                            )
+                        )
+                }
             }
         }
     }
     
     // MARK: - 이미지 없는 경우
-    private func emptyStateView() -> some View {
-        print(#function)
-        return Rectangle()
-            .fill(Color.gray.opacity(0.2))
-            .overlay(
-                VStack(spacing: 4) {
-                    Image(systemName: "photo")
-                        .font(.title)
-                        .foregroundColor(.gray)
-                    Text("이미지 준비중입니다.")
-                        .font(.caption)
-                        .foregroundColor(.gray)
+    private struct EmptyStateView: View {
+        let isPickchelin: Bool
+        
+        var body: some View {
+            Rectangle()
+                .fill(Color.gray.opacity(0.2))
+                .overlay(
+                    VStack(spacing: 4) {
+                        Image(systemName: "photo")
+                            .font(.title)
+                            .foregroundColor(.gray)
+                        Text("이미지 준비중입니다.")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                )
+                .overlay(alignment: .topTrailing) {
+                    if isPickchelin {
+                        PickChelinTagView()
+                            .padding(8)
+                    }
                 }
-            )
-            .overlay(alignment: .topTrailing) {
-                if isPickchelin {
-                    PickChelinTagView()
-                        .padding(8)
-                }
-            }
-            .cornerRadius(12)
+                .cornerRadius(12)
+        }
     }
 }
 
