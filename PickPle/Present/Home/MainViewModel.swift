@@ -19,6 +19,9 @@ final class MainViewModel: BaseViewModel, ViewModelType {
     
     private var allPopularStoreData = [PopularStore]()
     private var allStoreData = [StoreSummary]()
+    private var searchPopularData = [String]()
+    private var currentSearchPopular = 0
+    private var searchTimerCancellable: AnyCancellable?
     
     private var isPaginationEnabled = false
 
@@ -33,6 +36,7 @@ final class MainViewModel: BaseViewModel, ViewModelType {
 extension MainViewModel {
     struct Input {
         let onAppearTrigger = PassthroughSubject<Void, Never>()
+        let onDisappearTrigger = PassthroughSubject<Void, Never>()
         let mapSheetTrigger = PassthroughSubject<Void, Never>()
         let selectedLocationTrigger = PassthroughSubject<Void, Never>()
         let selectedCategoryTrigger = PassthroughSubject<StoreCategory, Never>()
@@ -48,6 +52,7 @@ extension MainViewModel {
         var address = ""
         var popularStores = [PopularStore]()
         var storeSummaries = [StoreSummary]()
+        var searchPopular = ""
         var selectedCategory: StoreCategory? = nil
         var showOrderSheet = false
         var selectedOrder: StoreOrder = .distance
@@ -60,6 +65,13 @@ extension MainViewModel {
                 owner.output.address = owner.setAddress()
                 owner.fetchStoreData()
                 owner.fetchPopularStoreData()
+                owner.fetchSearchPopularData()
+            }
+            .store(in: &cancellables)
+        
+        input.onDisappearTrigger
+            .sink(with: self) { owner, _ in
+                owner.stopSearchTimer()
             }
             .store(in: &cancellables)
         
@@ -168,7 +180,6 @@ extension MainViewModel {
                     }
                     owner.storeListParam.next = success.nextCursor
                     owner.filterStoreData()
-                    print("!!!!!!!!!!!! \(owner.output.storeSummaries.count)")
                     if let limit = owner.storeListParam.limit {
                         owner.isPaginationEnabled = success.data.count >= limit
                     }
@@ -207,6 +218,39 @@ extension MainViewModel {
             }
             return isInclude
         }
+    }
+    
+    private func fetchSearchPopularData() {
+        let publish = storeRepository.searchPopular()
+        publish
+            .receive(on: DispatchQueue.main)
+            .sink(with: self) { owner, result in
+                switch result {
+                case .success(let success):
+                    owner.searchPopularData = success.data
+                    owner.startSearchTimer()
+                case .failure(let error):
+                    print(error)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func startSearchTimer() {
+        guard !searchPopularData.isEmpty else { return }
+        output.searchPopular = "1 \(searchPopularData[currentSearchPopular])"
+        
+        searchTimerCancellable = Timer.publish(every: 5.0, on: .main, in: .common)
+            .autoconnect()
+            .sink(with: self) { owner, _ in
+                owner.currentSearchPopular = (owner.currentSearchPopular + 1) % owner.searchPopularData.count
+                owner.output.searchPopular = "\(owner.currentSearchPopular + 1) \(owner.searchPopularData[owner.currentSearchPopular])"
+            }
+    }
+    
+    private func stopSearchTimer() {
+        searchTimerCancellable?.cancel()
+        searchTimerCancellable = nil
     }
     
     private func likeStore(id: String, isPick: Bool) {
@@ -250,6 +294,7 @@ extension MainViewModel {
 extension MainViewModel {
     enum Action {
         case onAppear
+        case onDisappear
         case mapSheet
         case selectedLocation
         case selectedCategory(_ category: StoreCategory)
@@ -264,6 +309,9 @@ extension MainViewModel {
         switch action {
         case .onAppear:
             input.onAppearTrigger
+                .send(())
+        case .onDisappear:
+            input.onDisappearTrigger
                 .send(())
         case .mapSheet:
             input.mapSheetTrigger

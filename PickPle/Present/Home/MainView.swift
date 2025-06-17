@@ -29,6 +29,9 @@ struct MainView: View {
                 .task {
                     viewModel.action(.onAppear)
                 }
+                .onDisappear {
+                    viewModel.action(.onDisappear)
+                }
         } else {
             InitialLocationSettingView()
         }
@@ -92,7 +95,7 @@ private struct LocationAndSearchView: View {
                 Spacer()
             }
             SearchTextField("검색어를 입력해주세요", text: $searchText)
-            SearchListView()
+            SearchListView(viewModel: viewModel)
                 .wrapToButton {
                     // TODO: 검색 결과 이동
                 }
@@ -120,6 +123,8 @@ private struct LocationAndSearchView: View {
     
     // MARK: - 인기검색어 뷰
     private struct SearchListView: View {
+        @ObservedObject var viewModel: MainViewModel
+        
         var body: some View {
             HStack(spacing: 8) {
                 HStack(spacing: 0) {
@@ -129,7 +134,9 @@ private struct LocationAndSearchView: View {
                         .font(.pretendard(.caption1))
                 }
                 .foregroundStyle(.deepSprout)
-                Text("1 스타벅스")
+                Text(viewModel.output.searchPopular)
+                    .animation(.easeInOut(duration: 0.5), value: viewModel.output.searchPopular)
+
                     .font(.pretendard(.caption1))
                     .foregroundStyle(.blackSprout)
                 Spacer()
