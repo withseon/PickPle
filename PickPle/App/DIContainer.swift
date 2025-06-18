@@ -12,8 +12,8 @@ final class DIContainer: ObservableObject {
     
     private let networkManager: NetworkManager
     
-    let userRepository: DefaultUserRepository
-    let storeRepository: DefaultStoreRepository
+    let userRepository: UserRepository
+    let storeRepository: StoreRepository
     
     init() {
         self.locationManager = LocationManager()
