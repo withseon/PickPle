@@ -29,7 +29,7 @@ struct StoreDetailResponse: Decodable {
         let updatedAt: String
     }
     
-    let storeID: String
+    let storeId: String
     let category: String?
     let name: String?
     let description: String?

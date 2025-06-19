@@ -12,6 +12,7 @@ protocol StoreRepository {
     func popularStore(_ category: StoreCategory?) -> AnyPublisher<Result<PopularStoreListResponse, NetworkError>, Never>
     func searchPopular() -> AnyPublisher<Result<SearchPopularResponse, NetworkError>, Never>
     func likeStore(_ storeId: String, _ isPick: Bool) -> AnyPublisher<Result<StoreLikeResponse, NetworkError>, Never>
+    func storeDetail(_ id: String) -> AnyPublisher<Result<StoreDetailResponse, NetworkError>, Never>
 }
 
 final class DefaultStoreRepository: StoreRepository {
@@ -110,6 +111,27 @@ final class DefaultStoreRepository: StoreRepository {
                         errorType: UserErrorResponse.self
                     )
                     promise(.success(.success(likeStore)))
+                } catch {
+                    if case let NetworkError.server(serverError) = error {
+                        promise(.success(.failure(.server(serverError))))
+                    } else {
+                        promise(.success(.failure(.unknown(error))))
+                    }
+                }
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+    
+    func storeDetail(_ id: String) -> AnyPublisher<Result<StoreDetailResponse, NetworkError>, Never> {
+        return Future { promise in
+            Task { [weak self] in
+                guard let self else { return }
+                do {
+                    let storeDetail = try await networkManager.request(
+                        target: StoreRouter.storeDetail(id),
+                        responseType: StoreDetailResponse.self,
+                        errorType: UserErrorResponse.self)
                 } catch {
                     if case let NetworkError.server(serverError) = error {
                         promise(.success(.failure(.server(serverError))))
