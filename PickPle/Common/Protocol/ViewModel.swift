@@ -28,10 +28,6 @@ protocol ViewModelType: AnyObject, ObservableObject {
 //    init() {
 //        transform()
 //    }
-//
-//    deinit {
-//        print("SearchViewModel deinit")
-//    }
 //}
 //
 //// MARK: - Input/Output
