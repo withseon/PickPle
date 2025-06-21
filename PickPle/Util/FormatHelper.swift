@@ -9,14 +9,14 @@ import Foundation
 import CoreLocation
 
 enum FormatHelper {
-    static func closeTime(_ text: String) -> String {
+    static func getTime(_ text: String, isDetail: Bool = false) -> String {
         let close = text.split(separator: ":").map { Int($0) }
         guard let inputHour = close[0],
               let inputMinute = close[1] else { return "-" }
         
         let period = inputHour == 24 || inputHour < 12 ? "AM" : "PM"
-        var hour = "0"
-        let minute = inputMinute == 0 ? "" : ":\(inputMinute)"
+        var hour = ""
+        let minute = inputMinute == 0 ? (isDetail ? ":\(inputMinute)" : "") : ":\(inputMinute)"
         
         switch inputHour {
         case 24:
@@ -45,9 +45,10 @@ enum FormatHelper {
         let distanceInMeters = startLocation.distance(from: endLocation)
         return formatDistance(distanceInMeters)
     }
-
+    
     static func formatDistance(_ meters: Double) -> String {
         let kilometers = meters / 1000
         let roundedKilometers = ceil(kilometers * 10) / 10
         return String(format: "%.1fkm", roundedKilometers)
-    }}
+    }
+}

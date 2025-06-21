@@ -35,7 +35,7 @@ extension PopularStoreListResponse.PopularStoreResponse {
             storeId: storeId,
             category: category,
             name: name,
-            close: FormatHelper.closeTime(close),
+            close: FormatHelper.getTime(close),
             mainImageUrl: storeImageUrls[0],
             isPicchelin: isPicchelin,
             isPick: isPick,

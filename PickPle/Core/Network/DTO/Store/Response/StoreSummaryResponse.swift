@@ -32,7 +32,7 @@ extension StoreSummaryResponse {
             storeId: storeId,
             category: category,
             name: name,
-            close: FormatHelper.closeTime(close),
+            close: FormatHelper.getTime(close),
             storeImageUrls: storeImageUrls,
             isPicchelin: isPicchelin,
             isPick: isPick,

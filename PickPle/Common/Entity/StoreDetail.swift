@@ -28,17 +28,15 @@ struct StoreDetail {
     }
     
     let storeId: String
-    let category: String
     let name: String
-    let description: String
-    let open: String
+    let businessHours: String
     let address: String
     let estimatedPickupTime: String
     let parkinGuide: String
     let storeImageUrls: [String]
     let isPicchelin: Bool
     let isPick: Bool
-    let pickCount: String
+    let pickCount: Int
     let totalReviewCount: String
     let totalOrderCount: String
     let totalRating: String
