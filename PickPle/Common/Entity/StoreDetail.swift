@@ -14,7 +14,7 @@ struct StoreDetail {
         let profileImage: String?
     }
     
-    struct Menu {
+    struct Menu: Equatable {
         let menuId: String
         let category: String
         let name: String
