@@ -148,25 +148,35 @@ private struct LocationAndSearchView: View {
 // MARK: - 가게 리스트 뷰
 private struct StoreListView: View {
     @ObservedObject var viewModel: MainViewModel
-    
+
     var body: some View {
         List {
             Section {
                 ForEach(viewModel.output.storeSummaries, id: \.storeId) { store in
-                    VStack(spacing: 0) {
-                        StoreView(viewModel: viewModel, store: store)
-                            .padding(20)
-                            .onAppear {
-                                if !viewModel.output.storeSummaries.isEmpty,
-                                   store == viewModel.output.storeSummaries.last {
-                                    viewModel.action(.pagination)
+                    ZStack {
+                        NavigationLink(value: PushItem.storeDetail(store.storeId)) {
+                            EmptyView()
+                        }
+                        .opacity(0)
+
+                        VStack(spacing: 0) {
+                            StoreView(viewModel: viewModel, store: store)
+                                .padding(20)
+                                .background(.gray15)
+                                .contentShape(Rectangle())
+                                .onAppear {
+                                    if !viewModel.output.storeSummaries.isEmpty,
+                                       store == viewModel.output.storeSummaries.last {
+                                        viewModel.action(.pagination)
+                                    }
                                 }
+
+                            if store != viewModel.output.storeSummaries.last {
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundStyle(.gray30)
+                                    .padding(.horizontal, 20)
                             }
-                        if store != viewModel.output.storeSummaries.last {
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundStyle(.gray30)
-                                .padding(.horizontal, 20)
                         }
                     }
                     .background(.gray15)
@@ -174,7 +184,6 @@ private struct StoreListView: View {
             } header: {
                 StoreHeaderView(viewModel: viewModel)
             }
-            .background(.clear)
             .listRowInsets(.init())
             .listRowSeparator(.hidden)
         }
@@ -207,9 +216,11 @@ private struct StoreHeaderView: View {
                     .padding(.horizontal, 20)
                     
                     ScrollView(.horizontal) {
-                        HStack {
+                        LazyHStack {
                             ForEach(viewModel.output.popularStores, id: \.storeId) { store in
-                                PopularStoreView(viewModel: viewModel, store: store)
+                                NavigationLink(value: PushItem.storeDetail(store.storeId)) {
+                                    PopularStoreView(viewModel: viewModel, store: store)
+                                }
                             }
                         }
                         .padding(.horizontal, 20)
@@ -334,12 +345,14 @@ private struct PopularStoreView: View {
                     Text(store.name)
                         .lineLimit(1)
                         .font(.pretendard(.body3))
+                        .foregroundStyle(.gray100)
                     HStack(spacing: 0) {
                         Image("like.fill")
                             .iconFrame(16)
                             .foregroundStyle(.brightForsythia)
                         Text("\(store.pickCount)개")
                             .font(.pretendard(.body3))
+                            .foregroundStyle(.gray100)
                     }
                     Spacer()
                 }
