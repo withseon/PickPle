@@ -14,17 +14,22 @@ struct StoreDetail {
         let profileImage: String?
     }
     
-    struct Menu: Equatable {
-        let menuId: String
-        let category: String
-        let name: String
-        let description: String
-        let price: String
-        let isSoldOut: Bool
-        let tags: [String]
-        let menuImageUrl: String?
-        let createdAt: String
-        let updatedAt: String
+    struct CategoryItem: Hashable {
+        struct MenuItem: Hashable, Equatable {
+            let menuId: String
+            let category: String
+            let name: String
+            let description: String
+            let price: String
+            let isSoldOut: Bool
+            let tags: [String]
+            let menuImageUrl: String?
+            let createdAt: String
+            let updatedAt: String
+        }
+        
+        let title: String
+        let menuList: [MenuItem]
     }
     
     let storeId: String
@@ -42,8 +47,37 @@ struct StoreDetail {
     let totalRating: String
     let creator: UserInfo
     let location: Location
-    let menuCategory: [String]
-    let MenuList: [Menu]
+    let categoryList: [CategoryItem]
     let createdAt: String
     let updatedAt: String
+}
+
+extension StoreDetail {
+    static let empty = StoreDetail(
+        storeId: "",
+        name: "",
+        businessHours: "",
+        address: "",
+        estimatedPickupTime: "",
+        parkinGuide: "",
+        storeImageUrls: [],
+        isPicchelin: false,
+        isPick: false,
+        pickCount: 0,
+        totalReviewCount: "",
+        totalOrderCount: "",
+        totalRating: "",
+        creator: UserInfo(
+            userId: "",
+            nick: "",
+            profileImage: nil
+        ),
+        location: Location(
+            latitude: 0.0,
+            longitude: 0.0,
+            address: ""
+        ),
+        categoryList: [],
+        createdAt: "",
+        updatedAt: "")
 }

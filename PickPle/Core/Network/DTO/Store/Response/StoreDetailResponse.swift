@@ -55,12 +55,44 @@ struct StoreDetailResponse: Decodable {
 
 extension StoreDetailResponse {
     var asStoreDetail: StoreDetail {
+        let menuItems = menuList.map { menuData in
+            StoreDetail.CategoryItem.MenuItem(
+                menuId: menuData.menuId,
+                category: menuData.category,
+                name: menuData.name,
+                description: menuData.description ?? "",
+                price: "\(menuData.price.formatted())원",
+                isSoldOut: menuData.isSoldOut,
+                tags: menuData.tags,
+                menuImageUrl: menuData.menuImageUrl,
+                createdAt: menuData.createdAt,
+                updatedAt: menuData.updatedAt
+            )
+        }
+        
+        var uniqueCategories: [String] = []
+        var groupedByCategory: [String: [StoreDetail.CategoryItem.MenuItem]] = [:]
+        
+        for item in menuItems {
+            if !uniqueCategories.contains(item.category) {
+                uniqueCategories.append(item.category)
+                groupedByCategory[item.category] = []
+            }
+            groupedByCategory[item.category]?.append(item)
+        }
+        
+        let categoryList = uniqueCategories.compactMap { category in
+            let items = groupedByCategory[category] ?? []
+            return StoreDetail.CategoryItem(title: category, menuList: items)
+        }
+
+        
         return StoreDetail(
             storeId: storeId,
             name: name,
             businessHours: businessHours(open: self.open, close: close),
             address: address ?? "주소 정보가 없습니다.",
-            estimatedPickupTime: "누적 주문 \(estimatedPickupTime)회",
+            estimatedPickupTime: "예상 소요 시간 \(estimatedPickupTime)분",
             parkinGuide: parkinGuide ?? "주차 정보가 없습니다.",
             storeImageUrls: storeImageUrls,
             isPicchelin: isPicchelin,
@@ -78,25 +110,7 @@ extension StoreDetailResponse {
                 latitude: Double(geolocation.latitude),
                 longitude: Double(geolocation.longitude),
                 address: ""),
-            menuCategory: menuList
-                .compactMap { $0.category }
-                .reduce([]) { result, category in
-                    result.contains(category) ? result : result + [category]
-                },
-            MenuList: menuList.map {
-                StoreDetail.Menu(
-                    menuId: $0.menuId,
-                    category: $0.category,
-                    name: $0.name,
-                    description: $0.description ?? "",
-                    price: "\($0.price.formatted())원",
-                    isSoldOut: $0.isSoldOut,
-                    tags: $0.tags,
-                    menuImageUrl: $0.menuImageUrl,
-                    createdAt: $0.createdAt,
-                    updatedAt: $0.updatedAt
-                )
-            },
+            categoryList: categoryList,
             createdAt: createdAt,
             updatedAt: updatedAt)
     }
