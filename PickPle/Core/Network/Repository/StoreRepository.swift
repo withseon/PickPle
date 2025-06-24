@@ -132,6 +132,7 @@ final class DefaultStoreRepository: StoreRepository {
                         target: StoreRouter.storeDetail(id),
                         responseType: StoreDetailResponse.self,
                         errorType: UserErrorResponse.self)
+                    promise(.success(.success(storeDetail)))
                 } catch {
                     if case let NetworkError.server(serverError) = error {
                         promise(.success(.failure(.server(serverError))))

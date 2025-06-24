@@ -32,7 +32,7 @@ extension StoreDetailViewModel {
     }
 
     struct Output {
-//        var storeDetailData
+        var storeDetailData: StoreDetail =  StoreDetail.empty
     }
 
     func transform() {
@@ -50,10 +50,9 @@ extension StoreDetailViewModel {
             .sink(with: self) { owner, result in
                 switch result {
                 case .success(let success):
-                    break
+                    owner.output.storeDetailData = success.asStoreDetail
                 case .failure(let error):
                     print(error)
-                    break
                 }
             }
             .store(in: &cancellables)

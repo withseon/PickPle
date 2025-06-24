@@ -13,12 +13,12 @@ private struct ScrollOffsetPreferenceKey: PreferenceKey {
 }
 
 struct StoreDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: StoreDetailViewModel
-    @State private var selectedCategory = "검색한 메뉴"
+    @State private var selectedCategory = ""
     @State private var showNavigationTitle = false
     @State private var topSafeArea: CGFloat = 0
     
-    let categories = ["검색한 메뉴", "인기메뉴", "수제도넛", "수제 젤리"]
     let tabViewHeight: CGFloat = 240
     let stickyHeaderHeight: CGFloat = 60
     let scrollCoordinateSpace: String = "storeDetailScroll"
@@ -30,28 +30,32 @@ struct StoreDetailView: View {
                     ScrollView {
                         LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
                             Section {
-                                HeaderView(tabViewHeight: tabViewHeight, topSafeArea: topSafeArea)
-                                    .ignoresSafeArea(.container, edges: .top)
-                                    .padding(.top, -topSafeArea)
+                                HeaderView(
+                                    viewModel: viewModel,
+                                    tabViewHeight: tabViewHeight,
+                                    topSafeArea: topSafeArea
+                                )
+                                .ignoresSafeArea(.container, edges: .top)
+                                .padding(.top, -topSafeArea)
                             } header: {
                                 EmptyView()
                             }
                             
                             Section {
-                                ForEach(viewModel.output.storeDetailData.menuCategory, id: \.self) { category in
+                                ForEach(viewModel.output.storeDetailData.categoryList, id: \.self) { category in
                                     MenuSectionView(
                                         selectedCategory: $selectedCategory,
-                                        category: category,
-                                        items: StoreDetail.sampleData.MenuList,
+                                        category: category.title,
+                                        items: category.menuList,
                                         stickyHeaderHeight: stickyHeaderHeight,
                                         topSafeArea: topSafeArea,
                                         scrollCoordinateSpace: scrollCoordinateSpace
                                     )
-                                    .id(category)
+                                    .id(category.title)
                                 }
                             } header: {
                                 CategoryHeaderView(
-                                    categories: categories,
+                                    categories: viewModel.output.storeDetailData.categoryList.map { $0.title },
                                     selectedCategory: $selectedCategory,
                                     scrollAction: { category in
                                         selectedCategory = category
@@ -83,10 +87,13 @@ struct StoreDetailView: View {
                 .onAppear {
                     topSafeArea = geometry.safeAreaInsets.top
                 }
+                .onChange(of: geometry.safeAreaInsets.top) { newValue in
+                    topSafeArea = newValue
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden()
-            .navigationTitle(showNavigationTitle ? "새싹 도넛 가게" : "")
+            .navigationTitle(showNavigationTitle ? viewModel.output.storeDetailData.name : "")
             .toolbarBackground(showNavigationTitle ? .visible : .hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -94,7 +101,7 @@ struct StoreDetailView: View {
                         .iconFrame(32)
                         .foregroundStyle(showNavigationTitle ? .gray100 : .white)
                         .wrapToButton {
-                            print("뒤로가기 버튼 클릭")
+                            dismiss()
                         }
                 }
                 
@@ -114,32 +121,29 @@ struct StoreDetailView: View {
     }
     
     struct HeaderView: View {
+        @ObservedObject var viewModel: StoreDetailViewModel
         @State private var currentPage = 0
         
         let tabViewHeight: CGFloat
         let topSafeArea: CGFloat
         
+        private let screenWidth = UIScreen.main.bounds.width
+        
         var body: some View {
             VStack(spacing: 0) {
                 ZStack(alignment: .bottom) {
                     TabView(selection: $currentPage) {
-                        ForEach(0..<3) { index in
-                            // TODO: CachedAsyncImage
-                            if index == 1 {
-                                Rectangle()
-                                    .foregroundStyle(.red)
-                            } else {
-                                Rectangle()
-                                    .foregroundStyle(.yellow)
-                            }
+                        ForEach(viewModel.output.storeDetailData.storeImageUrls.indices, id: \.self) { index in
+                            CachedAsyncImage(path: viewModel.output.storeDetailData.storeImageUrls[index], width: screenWidth, height: tabViewHeight + topSafeArea)
+                                .tag(index)
                         }
                     }
-                    .frame(height: tabViewHeight + topSafeArea)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: screenWidth, height: tabViewHeight + topSafeArea)
+                    .clipped()
                     .tabViewStyle(.page(indexDisplayMode: .never))
                     
                     HStack {
-                        ForEach(0..<3, id: \.self) { index in
+                        ForEach(0..<viewModel.output.storeDetailData.storeImageUrls.count, id: \.self) { index in
                             Circle()
                                 .fill(currentPage == index ? .gray0 : .gray45)
                                 .frame(width: currentPage == index ? 8 : 4, height: currentPage == index ? 8 : 4)
@@ -151,20 +155,22 @@ struct StoreDetailView: View {
                 // 가게 정보
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("새싹 도넛 가게")
+                        Text(viewModel.output.storeDetailData.name)
                             .font(.pretendard(.title))
                             .foregroundStyle(.gray100)
-                        PickChelinTagView()
+                        if viewModel.output.storeDetailData.isPicchelin {
+                            PickChelinTagView()
+                        }
                     }
-                    HStack {
-                        MainInfoText(icon: "like.fill", text: "202개")
-                        MainInfoText(icon: "star.fill", text: "4.8", subText: "(211)", subIcon: "chevron.right")
+                    HStack(spacing: 12) {
+                        MainInfoText(icon: "like.fill", text: "\(viewModel.output.storeDetailData.pickCount)개")
+                        MainInfoText(icon: "star.fill", text: viewModel.output.storeDetailData.totalRating, subText: viewModel.output.storeDetailData.totalReviewCount, subIcon: "chevron.right")
                         Spacer()
                         HStack {
                             Image("sparkle")
                                 .iconFrame(16)
                                 .foregroundStyle(.gray45)
-                            Text("누적 주문 135회")
+                            Text(viewModel.output.storeDetailData.totalOrderCount)
                                 .font(.pretendard(.body3))
                                 .foregroundStyle(.gray45)
                         }
@@ -172,9 +178,9 @@ struct StoreDetailView: View {
                     
                     HStack {
                         VStack(alignment: .leading, spacing: 8) {
-                            DetailInfoText(title: "가게주소", icon: "distance", text: "서울 영등포구 선유로9길 30 106동")
-                            DetailInfoText(title: "영업시간", icon: "time", text: "매일 10:00 AM ~ 7:00 PM")
-                            DetailInfoText(title: "주차여부", icon: "parking", text: "매장 앞 평행 주차 가능")
+                            DetailInfoText(title: "가게주소", icon: "distance", text: viewModel.output.storeDetailData.address)
+                            DetailInfoText(title: "영업시간", icon: "time", text: viewModel.output.storeDetailData.businessHours)
+                            DetailInfoText(title: "주차여부", icon: "parking", text: viewModel.output.storeDetailData.parkinGuide)
                         }
                         Spacer()
                     }
@@ -188,13 +194,14 @@ struct StoreDetailView: View {
                     HStack {
                         Image("run")
                             .iconFrame(16)
-                        Text("예상 소요시간 30분 (3.2km)")
+                        Text(viewModel.output.storeDetailData.estimatedPickupTime)
                             .font(.pretendard(.body3))
                     }
                     .foregroundStyle(.deepSprout)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 12)
                     .background(.gray0)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(.gray30)
@@ -262,16 +269,18 @@ struct StoreDetailView: View {
         let text: String
         
         var body: some View {
-            HStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
                 Text(title)
                     .font(.pretendard(.body2))
                     .foregroundStyle(.gray60)
-                Image(icon)
-                    .iconFrame(20)
-                    .foregroundStyle(.deepSprout)
-                Text(text)
-                    .font(.pretendard(.body2))
-                    .foregroundStyle(.gray60)
+                HStack(alignment: .top, spacing: 4) {
+                    Image(icon)
+                        .iconFrame(20)
+                        .foregroundStyle(.deepSprout)
+                    Text(text)
+                        .font(.pretendard(.body2))
+                        .foregroundStyle(.gray60)
+                }
             }
         }
     }
@@ -323,7 +332,7 @@ struct MenuSectionView: View {
     @Binding var selectedCategory: String
     
     let category: String
-    let items: [StoreDetail.Menu]
+    let items: [StoreDetail.CategoryItem.MenuItem]
     let stickyHeaderHeight: CGFloat
     let topSafeArea: CGFloat
     let scrollCoordinateSpace: String
@@ -348,7 +357,7 @@ struct MenuSectionView: View {
                             let adjustedMaxY = frame.maxY
                             
                             if adjustedMinY <= (topSafeArea + stickyHeaderHeight + 50) &&
-                               adjustedMaxY >= (topSafeArea + stickyHeaderHeight) {
+                                adjustedMaxY >= (topSafeArea + stickyHeaderHeight) {
                                 DispatchQueue.main.async {
                                     selectedCategory = category
                                 }
@@ -358,16 +367,16 @@ struct MenuSectionView: View {
                             let adjustedMinY = minY
                             
                             if adjustedMinY <= (topSafeArea + stickyHeaderHeight + 50) &&
-                               adjustedMinY >= -(topSafeArea + 100) {
+                                adjustedMinY >= -(topSafeArea + 100) {
                                 selectedCategory = category
                             }
                         }
                 }
             )
-
+            
             ForEach(items, id: \.menuId) { item in
                 VStack(spacing: 0) {
-                    MenuItemView()
+                    MenuItemView(menuItem: item)
                         .padding(.vertical, 12)
                         .padding(.horizontal, 20)
                     if item != items.last {
@@ -386,37 +395,46 @@ struct MenuSectionView: View {
 }
 
 struct MenuItemView: View {
+    let menuItem: StoreDetail.CategoryItem.MenuItem
+    
     var body: some View {
         VStack(alignment: .leading) {
-            Text("인기 1위")
-                .font(.pretendard(.caption2))
-                .foregroundStyle(.blackSprout)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(.brightSprout)
-                .cornerRadius(4)
+            HStack(spacing: 4) {
+                ForEach(menuItem.tags, id: \.self) { tag in
+                    Text(tag)
+                        .font(.pretendard(.caption2))
+                        .foregroundStyle(.blackSprout)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(.brightSprout)
+                        .cornerRadius(4)
+                }
+            }
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("올리브 그린 도넛")
+                    Text(menuItem.name)
                         .font(.pretendard(.body1))
                         .foregroundStyle(.gray90)
-                    Text("겉은 바삭하고 속은 촉촉하며, 한 입 베어물면 향긋한 허브향이 입 안 가득 퍼집니다.")
+                    Text(menuItem.description)
                         .font(.pretendard(.caption1))
                         .foregroundStyle(.gray60)
-                        .lineLimit(2)
-                    Text("3,200원")
+                        .lineLimit(0)
+                    Text(menuItem.price)
                         .font(.pretendard(.body1))
                         .foregroundStyle(.gray90)
                 }
                 Spacer()
                 ZStack {
-                    // TODO: CachedAsyncImage
-                    Rectangle()
-                        .frame(width: 100, height: 100)
-                        .cornerRadius(8)
-                        .foregroundStyle(.yellow)
-                    // TODO: 품절 처리
-                    if true {
+                    if let imageUrl = menuItem.menuImageUrl {
+                        CachedAsyncImage(path: imageUrl, width: 100, height: 100)
+                            .cornerRadius(8)
+                    } else {
+                        Rectangle()
+                            .frame(width: 100, height: 100)
+                            .cornerRadius(8)
+                            .foregroundStyle(.brightForsythia)
+                    }
+                    if menuItem.isSoldOut {
                         Rectangle()
                             .frame(width: 100, height: 100)
                             .cornerRadius(8)

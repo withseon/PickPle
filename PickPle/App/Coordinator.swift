@@ -9,6 +9,7 @@ import SwiftUI
 
 enum PushItem: Hashable {
     case signup
+    case storeDetail(_ storeId: String)
 }
 
 enum SheetItem: Identifiable {
@@ -45,6 +46,9 @@ extension Coordinator {
         case .signup:
             let repository = diContainer.userRepository
             SignUpView(viewModel: SignUpViewModel(userRepository: repository))
+        case .storeDetail(let storeId):
+            let repository = diContainer.storeRepository
+            StoreDetailView(viewModel: StoreDetailViewModel(storeRepository: repository, storeId: storeId))
         }
     }
     
