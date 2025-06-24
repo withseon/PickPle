@@ -15,7 +15,6 @@ private struct ScrollOffsetPreferenceKey: PreferenceKey {
 struct StoreDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: StoreDetailViewModel
-    @State private var selectedCategory = ""
     @State private var showNavigationTitle = false
     @State private var topSafeArea: CGFloat = 0
     
@@ -42,25 +41,29 @@ struct StoreDetailView: View {
                             }
                             
                             Section {
-                                ForEach(viewModel.output.storeDetailData.categoryList, id: \.self) { category in
+                                ForEach(Array(viewModel.output.storeDetailData.categoryList.enumerated()), id: \.offset) { index, category in
                                     MenuSectionView(
-                                        selectedCategory: $selectedCategory,
+                                        selectedCategoryIndex: viewModel.output.selectedCategoryIndex,
+                                        categoryIndex: index,
                                         category: category.title,
                                         items: category.menuList,
                                         stickyHeaderHeight: stickyHeaderHeight,
                                         topSafeArea: topSafeArea,
-                                        scrollCoordinateSpace: scrollCoordinateSpace
+                                        scrollCoordinateSpace: scrollCoordinateSpace,
+                                        onCategoryVisible: { categoryIndex in
+                                            viewModel.action(.selectCategory(categoryIndex))
+                                        }
                                     )
-                                    .id(category.title)
+                                    .id(index)
                                 }
                             } header: {
                                 CategoryHeaderView(
                                     categories: viewModel.output.storeDetailData.categoryList.map { $0.title },
-                                    selectedCategory: $selectedCategory,
-                                    scrollAction: { category in
-                                        selectedCategory = category
+                                    selectedCategoryIndex: viewModel.output.selectedCategoryIndex,
+                                    scrollAction: { index in
+                                        viewModel.action(.selectCategory(index))
                                         withAnimation(.easeInOut(duration: 0.5)) {
-                                            scrollProxy.scrollTo(category, anchor: .top)
+                                            scrollProxy.scrollTo(index, anchor: .top)
                                         }
                                     }
                                 )
@@ -288,8 +291,8 @@ struct StoreDetailView: View {
 
 struct CategoryHeaderView: View {
     let categories: [String]
-    @Binding var selectedCategory: String
-    let scrollAction: (String) -> Void
+    let selectedCategoryIndex: Int
+    let scrollAction: (Int) -> Void
     
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -303,20 +306,20 @@ struct CategoryHeaderView: View {
                         .foregroundStyle(.gray0)
                 }
                 
-                ForEach(categories, id: \.self) { category in
+                ForEach(Array(categories.enumerated()), id: \.offset) { index, category in
                     Text(category)
                         .font(.pretendard(.body2))
-                        .fontWeight(selectedCategory == category ? .bold : .medium)
-                        .foregroundColor(selectedCategory == category ? .blackSprout : .gray30)
+                        .fontWeight(selectedCategoryIndex == index ? .bold : .medium)
+                        .foregroundColor(selectedCategoryIndex == index ? .blackSprout : .gray30)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
-                                .stroke(selectedCategory == category ? .blackSprout : .gray30,
-                                        lineWidth: selectedCategory == category ? 1.5 : 1)
+                                .stroke(selectedCategoryIndex == index ? .blackSprout : .gray30,
+                                        lineWidth: selectedCategoryIndex == index ? 1.5 : 1)
                         )
                         .wrapToButton {
-                            scrollAction(category)
+                            scrollAction(index)
                         }
                         .buttonStyle(PlainButtonStyle())
                 }
@@ -325,17 +328,17 @@ struct CategoryHeaderView: View {
         }
         .padding(.vertical, 12)
     }
-    
 }
 
 struct MenuSectionView: View {
-    @Binding var selectedCategory: String
-    
+    let selectedCategoryIndex: Int
+    let categoryIndex: Int
     let category: String
     let items: [StoreDetail.CategoryItem.MenuItem]
     let stickyHeaderHeight: CGFloat
     let topSafeArea: CGFloat
     let scrollCoordinateSpace: String
+    let onCategoryVisible: (Int) -> Void
     
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
@@ -359,7 +362,7 @@ struct MenuSectionView: View {
                             if adjustedMinY <= (topSafeArea + stickyHeaderHeight + 50) &&
                                 adjustedMaxY >= (topSafeArea + stickyHeaderHeight) {
                                 DispatchQueue.main.async {
-                                    selectedCategory = category
+                                    onCategoryVisible(categoryIndex)
                                 }
                             }
                         }
@@ -368,7 +371,7 @@ struct MenuSectionView: View {
                             
                             if adjustedMinY <= (topSafeArea + stickyHeaderHeight + 50) &&
                                 adjustedMinY >= -(topSafeArea + 100) {
-                                selectedCategory = category
+                                onCategoryVisible(categoryIndex)
                             }
                         }
                 }
@@ -418,7 +421,6 @@ struct MenuItemView: View {
                     Text(menuItem.description)
                         .font(.pretendard(.caption1))
                         .foregroundStyle(.gray60)
-                        .lineLimit(0)
                     Text(menuItem.price)
                         .font(.pretendard(.body1))
                         .foregroundStyle(.gray90)

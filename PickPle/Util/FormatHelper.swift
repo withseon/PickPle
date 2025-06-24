@@ -16,7 +16,7 @@ enum FormatHelper {
         
         let period = inputHour == 24 || inputHour < 12 ? "AM" : "PM"
         var hour = ""
-        let minute = inputMinute == 0 ? (isDetail ? ":\(inputMinute)" : "") : ":\(inputMinute)"
+        var minute = ""
         
         switch inputHour {
         case 24:
@@ -25,6 +25,15 @@ enum FormatHelper {
             hour = "\(inputHour - 12)"
         default:
             hour = "\(inputHour)"
+        }
+        
+        switch inputMinute {
+        case 0:
+            minute = isDetail ? ":00" : ""
+        case ..<10:
+            minute = ":0\(inputMinute)"
+        default:
+            minute = ":\(inputMinute)"
         }
         
         return "\(hour)\(minute)\(period)"

@@ -16,6 +16,10 @@ final class ImageLoader: ObservableObject {
     
     private var currentTask: Task<Void, Never>?
     
+    deinit {
+        print("ImageLoader Deinit")
+    }
+    
     func loadImage(from path: String, size: CGSize) async {
         currentTask?.cancel()
         
@@ -33,7 +37,6 @@ final class ImageLoader: ObservableObject {
         await currentTask?.value
     }
 }
-
 
 // MARK: - ImageCacheManager
 final class ImageCacheManager: ObservableObject {

@@ -29,16 +29,25 @@ final class StoreDetailViewModel: BaseViewModel, ViewModelType {
 extension StoreDetailViewModel {
     struct Input {
         let onAppearTrigger = PassthroughSubject<Void, Never>()
+        let selectCategoryTrigger = PassthroughSubject<Int, Never>()
     }
 
     struct Output {
         var storeDetailData: StoreDetail =  StoreDetail.empty
+        var categories = [String]()
+        var selectedCategoryIndex = 0
     }
 
     func transform() {
         input.onAppearTrigger
             .sink(with: self) { owner, _ in
                 owner.fetchStoreDetail()
+            }
+            .store(in: &cancellables)
+        
+        input.selectCategoryTrigger
+            .sink(with: self) { owner, index in
+                owner.output.selectedCategoryIndex = index
             }
             .store(in: &cancellables)
     }
@@ -50,7 +59,9 @@ extension StoreDetailViewModel {
             .sink(with: self) { owner, result in
                 switch result {
                 case .success(let success):
-                    owner.output.storeDetailData = success.asStoreDetail
+                    let storeDetailData = success.asStoreDetail
+                    owner.output.storeDetailData = storeDetailData
+                    owner.output.categories = storeDetailData.categoryList.map { $0.title }
                 case .failure(let error):
                     print(error)
                 }
@@ -64,6 +75,7 @@ extension StoreDetailViewModel {
 extension StoreDetailViewModel {
     enum Action {
         case onAppear
+        case selectCategory(_ index: Int)
     }
 
     func action(_ action: Action) {
@@ -71,6 +83,9 @@ extension StoreDetailViewModel {
         case .onAppear:
             input.onAppearTrigger
                 .send(())
+        case .selectCategory(let index):
+            input.selectCategoryTrigger
+                .send(index)
         }
     }
 }

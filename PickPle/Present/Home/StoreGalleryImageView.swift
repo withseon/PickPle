@@ -51,7 +51,7 @@ struct StoreGalleryImageView: View {
         
         var body: some View {
             CachedAsyncImage(path: urls[0], width: geometry.size.width, height: geometry.size.height)
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .topTrailing) {
                     PickChelinTagView()
                         .padding(8)
@@ -170,7 +170,7 @@ struct StoreGalleryImageView: View {
                             .padding(8)
                     }
                 }
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
 }
