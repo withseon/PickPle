@@ -24,6 +24,11 @@ struct PickPleApp: App {
         WindowGroup {
             if isActive {
                 CoordinatorView(coordinator: coordinator)
+                    .onOpenURL(perform: { url in
+                        if AuthApi.isKakaoTalkLoginUrl(url) {
+                            _ = AuthController.handleOpenUrl(url: url)
+                        }
+                    })
             } else {
                 SplashView()
                     .task {

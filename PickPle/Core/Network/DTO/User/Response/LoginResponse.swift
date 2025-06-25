@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct EmailLoginResponse: Decodable {
+struct LoginResponse: Decodable {
     let userId: String
     let email: String
     let nick: String

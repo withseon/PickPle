@@ -92,7 +92,7 @@ extension StoreDetailResponse {
             name: name,
             businessHours: businessHours(open: self.open, close: close),
             address: address ?? "주소 정보가 없습니다.",
-            estimatedPickupTime: "예상 소요 시간 \(estimatedPickupTime)분",
+            estimatedPickupTime: "예상 소요 시간 \(estimatedPickupTime)분 (\(FormatHelper.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude)))",
             parkinGuide: parkinGuide ?? "주차 정보가 없습니다.",
             storeImageUrls: storeImageUrls,
             isPicchelin: isPicchelin,

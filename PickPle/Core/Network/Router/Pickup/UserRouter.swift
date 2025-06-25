@@ -12,6 +12,7 @@ enum UserRouter {
     case validateEmail(_ request: ValidationEmailRequest)
     case joinEmail(_ request: JoinRequest)
     case emailLogin(_ request: EmailLoginRequest)
+    case kakaoLogin(_ request: KakaoLoginRequest)
     case myProfile
 }
 
@@ -31,6 +32,8 @@ extension UserRouter: TargetType {
             return "/v1/users/join"
         case .emailLogin:
             return "/v1/users/login"
+        case .kakaoLogin:
+            return "/v1/users/login/kakao"
         case .myProfile:
             return "v1/users/me/profile"
         }
@@ -40,27 +43,29 @@ extension UserRouter: TargetType {
         switch self {
         case .myProfile:
             return .get
-        case .validateEmail, .joinEmail, .emailLogin:
+        case .validateEmail, .joinEmail, .emailLogin, .kakaoLogin:
             return .post
         }
     }
     
     var parameters: RequestParams? {
         switch self {
-        case .myProfile:
-            return nil
         case .validateEmail(let request):
             return .body(request)
         case .joinEmail(let request):
             return .body(request)
         case .emailLogin(let request):
             return .body(request)
+        case .kakaoLogin(let request):
+            return .body(request)
+        case .myProfile:
+            return nil
         }
     }
     
     var headers: HTTPHeaders? {
         switch self {
-        case .validateEmail, .joinEmail, .emailLogin, .myProfile:
+        case .validateEmail, .joinEmail, .emailLogin, .kakaoLogin, .myProfile:
             return nil
         }
     }

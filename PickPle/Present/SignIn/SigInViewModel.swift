@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import KakaoSDKUser
 
 final class SignInViewModel: BaseViewModel, ViewModelType {
     var input = Input()
@@ -39,6 +40,7 @@ extension SignInViewModel {
         var emailErrorMessage = ""
         var passwordErrorMessage = ""
         let setFocusState = CurrentValueSubject<FieldType?, Never>(nil)
+        var pushMainTrigger = PassthroughSubject<Void, Never>()
     }
 
     func transform() {
@@ -64,7 +66,6 @@ extension SignInViewModel {
             .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
             .sink { [weak self] _ in
                 guard let self else { return }
-                dump(signInParam)
                 let validateEmail = validateEmail(signInParam.email)
                 let validatePassword = validatePassword(signInParam.password)
                 
@@ -77,7 +78,17 @@ extension SignInViewModel {
                 } else {
                     output.setFocusState
                         .send(nil)
-                    signIn()
+                    signInEmail()
+                }
+            }
+            .store(in: &cancellables)
+        
+        input.kakaoLoginTrigger
+            .sink(with: self) { owner, _ in
+                if (UserApi.isKakaoTalkLoginAvailable()) {
+                    owner.kakaoLonginWithApp()
+                } else {
+                    owner.kakaoLoginWithAccount()
                 }
             }
             .store(in: &cancellables)
@@ -111,14 +122,59 @@ extension SignInViewModel {
         }
     }
     
-    private func signIn() {
+    private func signInEmail() {
         let publisher = userRepository.loginEmail(signInParam)
+        print(#function)
         publisher
             .receive(on: DispatchQueue.main)
             .sink(with: self) { owner, result in
                 switch result {
-                case .success(let success):
-                    dump(success)
+                case .success(_):
+                    owner.output.pushMainTrigger
+                        .send(())
+                case .failure(let error):
+                    print(error)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func kakaoLonginWithApp() {
+        UserApi.shared.loginWithKakaoTalk { [weak self] (oauthToken, error) in
+            guard let self else { return }
+            if let error {
+                print(#function, error)
+            }
+            else {
+                if let accessToken = oauthToken?.accessToken {
+                    singInKakao(accessToken)
+                }
+            }
+        }
+    }
+    
+    private func kakaoLoginWithAccount() {
+        UserApi.shared.loginWithKakaoAccount { [weak self] (oauthToken, error) in
+            guard let self else { return }
+            if let error = error {
+                print(#function, error)
+            }
+            else {
+                if let idToken = oauthToken?.idToken {
+                    singInKakao(idToken)
+                }
+            }
+        }
+    }
+    
+    private func singInKakao(_ accessToken: String) {
+        let publish = userRepository.loginKakako(accessToken)
+        publish
+            .sink(with: self) { owner, result in
+                switch result {
+                case .success(_):
+                    owner.output.pushMainTrigger
+                        .send(())
                 case .failure(let error):
                     print(error)
                 }
