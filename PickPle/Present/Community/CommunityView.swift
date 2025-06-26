@@ -8,61 +8,84 @@
 import SwiftUI
 
 struct CommunityView: View {
-    
     var body: some View {
-        Section {
-            ForEach(0..<10) { _ in
-                CommunityPostView()
-            }
-        } header: {
-            CommunityHeaderView()
-        }
-
+        MainCommunityView()
+        .padding(.top, 20)
+        .background(.gray15)
+        // TODO: sheet
     }
 }
 
-struct CommunityHeaderView: View {
-    @State private var distance: Double = 300
+struct MainCommunityView: View {
+    var body: some View {
+        ZStack(alignment: .top) {
+            VStack(spacing: 0) {
+                FixedSearchHeaderView()
+                
+                ScrollView {
+                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        Section {
+                            SliderSectionView()
+                        }
+                        
+                        Section {
+                            ForEach(0..<10, id: \.self) { index in
+                                VStack {
+                                    CommunityPostView()
+                                        .padding(20)
+                                        .background(.gray15)
+                                    
+                                    if index < 9 {
+                                        Rectangle()
+                                            .frame(height: 1)
+                                            .foregroundStyle(.gray30)
+                                            .padding(.horizontal, 20)
+                                            .background(.gray15)
+                                    }
+                                }
+                            }
+                        } header: {
+                            TimelineHeaderView()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 고정 검색 헤더
+struct FixedSearchHeaderView: View {
     @State private var searchText: String = ""
     
     var body: some View {
-        VStack(spacing: 20) {
-            HStack(spacing: 10) {
-                SearchTextField("검색어를 입력해주세요.", text: $searchText)
+        HStack(spacing: 10) {
+            SearchTextField("검색어를 입력해주세요.", text: $searchText)
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.deepSprout)
+                    .frame(width: 40, height: 40)
                 Image("write")
                     .iconFrame(28)
                     .foregroundStyle(.gray0)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.deepSprout)
-                            .frame(width: 40, height: 40)
-                    )
-                    .wrapToButton {
-                        print("글 작성하기")
-                    }
             }
-            .padding(.horizontal, 20)
-            
-            CustomSliderTrack(value: $distance, range: 0...1000)
-                .padding(.horizontal, 20)
-            
-            HStack(alignment: .center) {
-                Text("타임라인")
-                    .font(.pretendard(.body2))
-                Spacer()
-                HStack {
-                    Text("최신순")
-                        .font(.pretendard(.caption1))
-                    Image("list")
-                        .iconFrame(16)
-                }
-                .foregroundStyle(.blackSprout)
-                .wrapToButton {
-                    print("정렬ㄴ")
-                }
+            .wrapToButton {
+                print("글 작성하기")
             }
-            .padding(.horizontal, 20)
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+    }
+}
+
+// MARK: - 슬라이더 섹션
+struct SliderSectionView: View {
+    @State private var distance: Double = 300
+    
+    var body: some View {
+        CustomSliderTrack(value: $distance, range: 0...1000)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 8)
     }
     
     private struct CustomSliderTrack: View {
@@ -138,45 +161,45 @@ struct CommunityHeaderView: View {
                         )
                     }
                     
-                    HStack {
-                        Spacer()
-                            .frame(width: 80)
-                        
                         HStack {
-                            // 첫 번째 세그먼트일 때 왼쪽 정렬
-                            if currentSegment <= 1 {
-                                DistanceDetailView(distance: value)
-                                Spacer()
-                            }
-                            // 마지막 세그먼트일 때 오른쪽 정렬
-                            else if currentSegment >= segmentCount - 1 {
-                                HStack {
-                                    Spacer()
-                                    DistanceDetailView(distance: value)
-                                }
-                            }
-                            // 중간일 때 슬라이더 위치를 부드럽게 따라가며 가장자리에서는 조정
-                            else {
-                                let labelWidth: CGFloat = 80
-                                let safeMargin: CGFloat = 20
-                                let targetPosition = indicatorPosition - labelWidth/2
-                                
-                                let minPosition: CGFloat = safeMargin
-                                let maxPosition = sliderWidth - labelWidth - safeMargin
-                                let finalPosition = max(minPosition, min(maxPosition, targetPosition))
-                                
-                                HStack(spacing: 0) {
-                                    Spacer()
-                                        .frame(width: finalPosition)
+                            Spacer()
+                                .frame(width: 80)
+                            
+                            HStack {
+                                // 첫 번째 세그먼트일 때 왼쪽 정렬
+                                if currentSegment <= 1 {
                                     DistanceDetailView(distance: value)
                                     Spacer()
-                                        .frame(width: sliderWidth - finalPosition - labelWidth)
+                                }
+                                // 마지막 세그먼트일 때 오른쪽 정렬
+                                else if currentSegment >= segmentCount - 1 {
+                                    HStack {
+                                        Spacer()
+                                        DistanceDetailView(distance: value)
+                                    }
+                                }
+                                // 중간일 때 슬라이더 위치를 부드럽게 따라가며 가장자리에서는 조정
+                                else {
+                                    let labelWidth: CGFloat = 80
+                                    let safeMargin: CGFloat = 20
+                                    let targetPosition = indicatorPosition - labelWidth/2
+                                    
+                                    let minPosition: CGFloat = safeMargin
+                                    let maxPosition = sliderWidth - labelWidth - safeMargin
+                                    let finalPosition = max(minPosition, min(maxPosition, targetPosition))
+                                    
+                                    HStack(spacing: 0) {
+                                        Spacer()
+                                            .frame(width: finalPosition)
+                                        DistanceDetailView(distance: value)
+                                        Spacer()
+                                            .frame(width: sliderWidth - finalPosition - labelWidth)
+                                    }
                                 }
                             }
+                            .frame(width: sliderWidth)
                         }
-                        .frame(width: sliderWidth)
-                    }
-                    .transition(.opacity.combined(with: .scale))
+                        .transition(.opacity.combined(with: .scale))
                 }
             }
             .frame(height: 60)
@@ -186,7 +209,7 @@ struct CommunityHeaderView: View {
             let distance: Double
             
             var body: some View {
-                Text(distance >= 1000 ? String(format: "%.1fkm", distance/1000).replacingOccurrences(of: ".0", with: "") : "\(Int(distance))M")
+                Text(distance >= 1000 ? String(format: "%.1fKM", distance/1000).replacingOccurrences(of: ".0", with: "") : "\(Int(distance))M")
                     .font(.pretendard(.caption2))
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
@@ -200,9 +223,124 @@ struct CommunityHeaderView: View {
     }
 }
 
+// MARK: - 스티키 타임라인 헤더
+struct TimelineHeaderView: View {
+    var body: some View {
+        HStack(alignment: .center) {
+            Text("타임라인")
+                .font(.pretendard(.body2))
+            Spacer()
+            HStack {
+                Text("최신순")
+                    .font(.pretendard(.caption1))
+                Image("list")
+                    .iconFrame(16)
+            }
+            .foregroundStyle(.blackSprout)
+            .wrapToButton {
+                print("정렬")
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(.gray15)
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(.gray30)
+                .padding(.horizontal, 20),
+            alignment: .bottom
+        )
+    }
+}
+
+// MARK: - 커뮤니티 포스트
 struct CommunityPostView: View {
     var body: some View {
-        Text("example")
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Rectangle()
+                    .frame(width: 32, height: 32)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                VStack(alignment: .leading) {
+                    Text("새싹 호로록 찹찹")
+                        .font(.pretendard(.caption1))
+                        .foregroundStyle(.gray100)
+                    Text("51분 전")
+                        .font(.pretendard(.caption2))
+                        .foregroundStyle(.gray60)
+                }
+                Spacer()
+            }
+            
+            StoreGalleryImageView(
+                imageUrls: [
+                    "https://picsum.photos/id/10/400/300",
+                    "https://picsum.photos/id/20/400/300",
+                    "https://picsum.photos/id/30/400/300"
+                ],
+                ratio: 4/3,
+                isPickchelin: false
+            )
+            .overlay(alignment: .topLeading) {
+                Image(true ? "like.fill" : "like")
+                    .iconFrame(24)
+                    .padding(8)
+                    .foregroundStyle(true ? .blackSprout : .gray45)
+                    .wrapToButton {
+                        print("좋아요")
+                    }
+                    .buttonStyle(.plain)
+            }
+            
+            HStack(spacing: 8) {
+                Text("입안에서 피어나는 봄, 도넛 한 입")
+                    .font(.pretendard(.body1))
+                    .foregroundStyle(.gray100)
+                    .lineLimit(1)
+                HStack(spacing: 2) {
+                    Image("like.fill")
+                        .iconFrame(20)
+                        .foregroundStyle(.brightForsythia)
+                    Text("12개")
+                        .font(.pretendard(.body1))
+                        .foregroundStyle(.gray100)
+                }
+                HStack(spacing: 2) {
+                    Image("distance")
+                        .iconFrame(20)
+                        .foregroundStyle(.deepSprout)
+                    Text("102M")
+                        .font(.pretendard(.body1))
+                        .foregroundStyle(.gray100)
+                }
+            }
+            Text("가게 문을 열자마자 퍼지는 달콤한 향기, 작은 도넛 위에 얹힌 새싹처럼 싱그러운 상상력. 한 입 베어물면 부드럽게 퍼지는 포근한 맛에 잠시 멈춰 서서 봄날을 음미하게 돼요.")
+                .font(.pretendard(.caption1))
+                .foregroundStyle(.gray60)
+            
+            HStack {
+                CachedAsyncImage(path: "", width: 60, height: 60)
+                    .border(.deepSprout)
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("새싹 도넛 가게")
+                            .font(.pretendard(.body3))
+                            .foregroundStyle(.blackSprout)
+                        Text("디저트 • 서울 영등포구 선유로9길 30")
+                            .font(.pretendard(.caption1))
+                            .foregroundStyle(.deepSprout)
+                    }
+                    Spacer()
+                }
+            }
+            .background(.brightSprout)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.deepSprout)
+            )
+        }
     }
 }
 

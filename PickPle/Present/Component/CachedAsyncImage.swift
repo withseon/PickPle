@@ -34,7 +34,6 @@ struct CachedAsyncImage: View {
             }
         }
         .frame(width: width, height: height)
-        .frame(minWidth: width)
         .clipped()
         .onAppear {
             Task {

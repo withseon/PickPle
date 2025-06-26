@@ -25,7 +25,7 @@ struct SearchTextField: View {
             TextField(placeholder, text: $text)
         }
         .padding(.horizontal, 12)
-        .frame(height: 44)
+        .frame(height: 40)
         .background(.gray0)
         .clipShape(.rect(cornerRadius: 20))
         .overlay {
