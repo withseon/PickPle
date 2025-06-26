@@ -8,12 +8,6 @@
 import Foundation
 
 struct StoreDetailResponse: Decodable {
-    struct UserInfoResponse: Decodable {
-        let userId: String
-        let nick: String
-        let profileImage: String?
-    }
-    
     struct MenuResponse: Decodable {
         let menuId: String
         let storeId: String
