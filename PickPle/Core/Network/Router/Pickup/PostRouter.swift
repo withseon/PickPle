@@ -9,13 +9,13 @@ import Foundation
 import Alamofire
 
 enum PostRouter {
-    case posts(_ Request: PostSummaryRequest)
+    case posts(_ request: PostSummaryRequest)
 }
 
 extension PostRouter: TargetType {
     var baseURL: String {
         switch self {
-        case .posts:
+        default:
             return APIURL.PICKUP
         }
     }
@@ -37,7 +37,7 @@ extension PostRouter: TargetType {
     var parameters: RequestParams? {
         switch self {
         case .posts(let request):
-            return .body(request)
+            return .query(request)
         }
     }
     

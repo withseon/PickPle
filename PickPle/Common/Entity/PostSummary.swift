@@ -25,4 +25,7 @@ struct PostSummary: Equatable {
     let likeCount: Int
     let createdAt: String
     let updatedAt: String
+    
+    let distance: String
+    let createdFromNow: String
 }

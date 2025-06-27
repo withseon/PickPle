@@ -52,10 +52,11 @@ extension CommunityViewModel {
             .store(in: &cancellables)
         
         input.updateDistanceTrigger
-            .throttle(for: .seconds(0.5), scheduler: DispatchQueue.main, latest: true)
+            .throttle(for: .seconds(1), scheduler: DispatchQueue.main, latest: true)
             .sink(with: self) { owner, distance in
                 if owner.output.distance != distance {
                     owner.output.distance = distance
+                    owner.postListParam.distance = Int(distance)
                     owner.postListParam.next = nil
                     owner.fetchPostData()
                 }

@@ -35,13 +35,13 @@ extension PopularStoreListResponse.PopularStoreResponse {
             storeId: storeId,
             category: category,
             name: name,
-            close: FormatHelper.getTime(close),
+            close: FormatHelper.shared.getTime(close),
             mainImageUrl: storeImageUrls[0],
             isPicchelin: isPicchelin,
             isPick: isPick,
             pickCount: pickCount,
             totalOrderCount: "\(totalOrderCount)회",
-            distance: FormatHelper.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude)
+            distance: FormatHelper.shared.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude, unit: .kilometers)
         )
     }
 }

@@ -9,11 +9,28 @@ import Foundation
 
 struct PostSummaryListResponse: Decodable {
     struct PostSummaryResponse: Decodable {
+        struct StoreResponse: Decodable {
+            let id: String
+            let category: String
+            let geolocation: GeolocationResponse
+            let updatedAt: String
+            let close: String
+            let totalReviewCount: Int
+            let totalRating: Double
+            let totalOrderCount: Int
+            let storeImageUrls: [String]
+            let hashTags: [String]
+            let pickCount: Int
+            let createdAt: String
+            let name: String
+            let isPick: Bool
+        }
+        
         let postId: String
         let category: String
         let title: String
         let content: String
-        let store: StoreSummaryResponse
+        let store: StoreResponse
         let geolocation: GeolocationResponse
         let creator: UserInfoResponse
         let files: [String]
@@ -33,7 +50,7 @@ extension PostSummaryListResponse.PostSummaryResponse {
             category: category,
             title: title,
             content: content,
-            storeId: store.storeId,
+            storeId: store.id,
             storeName: store.name,
             storeInfo: "\(store.category) • 주소",
             storeImageUrl: store.storeImageUrls.first,
@@ -51,6 +68,9 @@ extension PostSummaryListResponse.PostSummaryResponse {
             isLike: isLike,
             likeCount: likeCount,
             createdAt: createdAt,
-            updatedAt: updatedAt)
+            updatedAt: updatedAt,
+            distance: FormatHelper.shared.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude, unit: .auto),
+            createdFromNow: FormatHelper.shared.getTimeAgo(from: createdAt)
+        )
     }
 }

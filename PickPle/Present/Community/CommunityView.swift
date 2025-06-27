@@ -14,12 +14,16 @@ struct CommunityView: View {
         MainCommunityView(viewModel: viewModel)
         .padding(.top, 20)
         .background(.gray15)
+        .task {
+            viewModel.action(.fetchData)
+        }
         // TODO: sheet
     }
 }
 
 struct MainCommunityView: View {
     @ObservedObject var viewModel: CommunityViewModel
+    
     var body: some View {
         ZStack(alignment: .top) {
             VStack(spacing: 0) {
@@ -100,7 +104,7 @@ struct SliderSectionView: View {
 
 // MARK: - Custom Slider Track
 private struct CustomSliderTrack: View {
-    let distance: Double
+    @State var distance: Double
     let range: ClosedRange<Double>
     let onDistanceChange: (Double) -> Void
     
@@ -140,8 +144,8 @@ private struct CustomSliderTrack: View {
                                     .frame(height: 20)
                                     .onTapGesture {
                                         withAnimation(.easeInOut(duration: 0.2)) {
-                                            let newDistance = Double((index + 1)) * stepSize
-                                            onDistanceChange(newDistance)
+                                            distance = Double((index + 1)) * stepSize
+                                            onDistanceChange(distance)
                                         }
                                     }
                             }
@@ -156,14 +160,14 @@ private struct CustomSliderTrack: View {
                                     let clampedIndex = max(0, min(segmentIndex, segmentCount - 1))
                                     
                                     withAnimation(.easeInOut(duration: 0.1)) {
-                                        let newDistance = Double(clampedIndex + 1) * stepSize
-                                        onDistanceChange(newDistance)
+                                        distance = Double(clampedIndex + 1) * stepSize
                                     }
                                 }
                                 .onEnded { _ in
                                     withAnimation(.easeInOut(duration: 0.3)) {
                                         isDragging = false
                                     }
+                                    onDistanceChange(distance)
                                 }
                         )
                         .frame(maxWidth: .infinity)
@@ -279,10 +283,10 @@ struct CommunityPostView: View {
                     .frame(width: 32, height: 32)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 VStack(alignment: .leading) {
-                    Text(post.title)
+                    Text(post.creator.nickname)
                         .font(.pretendard(.caption1))
                         .foregroundStyle(.gray100)
-                    Text("51분 전")
+                    Text(post.createdFromNow)
                         .font(.pretendard(.caption2))
                         .foregroundStyle(.gray60)
                 }
@@ -290,16 +294,12 @@ struct CommunityPostView: View {
             }
             
             StoreGalleryImageView(
-                imageUrls: [
-                    "https://picsum.photos/id/10/400/300",
-                    "https://picsum.photos/id/20/400/300",
-                    "https://picsum.photos/id/30/400/300"
-                ],
+                imageUrls: post.files,
                 ratio: 5/3,
                 isPickchelin: false
             )
             .overlay(alignment: .topLeading) {
-                Image(true ? "like.fill" : "like")
+                Image(post.isLike ? "like.fill" : "like")
                     .iconFrame(24)
                     .padding(8)
                     .foregroundStyle(true ? .blackSprout : .gray45)
@@ -310,7 +310,7 @@ struct CommunityPostView: View {
             }
             
             HStack(spacing: 8) {
-                Text("입안에서 피어나는 봄, 도넛 한 입")
+                Text(post.title)
                     .font(.pretendard(.body1))
                     .foregroundStyle(.gray100)
                     .lineLimit(1)
@@ -318,7 +318,7 @@ struct CommunityPostView: View {
                     Image("like.fill")
                         .iconFrame(20)
                         .foregroundStyle(.brightForsythia)
-                    Text("12개")
+                    Text("\(post.likeCount)개")
                         .font(.pretendard(.body1))
                         .foregroundStyle(.gray100)
                 }
@@ -326,24 +326,28 @@ struct CommunityPostView: View {
                     Image("distance")
                         .iconFrame(20)
                         .foregroundStyle(.deepSprout)
-                    Text("102M")
+                    Text("\(post.distance)")
                         .font(.pretendard(.body1))
                         .foregroundStyle(.gray100)
                 }
             }
-            Text("가게 문을 열자마자 퍼지는 달콤한 향기, 작은 도넛 위에 얹힌 새싹처럼 싱그러운 상상력. 한 입 베어물면 부드럽게 퍼지는 포근한 맛에 잠시 멈춰 서서 봄날을 음미하게 돼요.")
+            Text(post.content)
                 .font(.pretendard(.caption1))
                 .foregroundStyle(.gray60)
             
-            HStack {
-                CachedAsyncImage(path: "", width: 60, height: 60)
-                    .border(.deepSprout)
+            HStack(spacing: 0) {
+                CachedAsyncImage(path: post.storeImageUrl ?? "", width: 60, height: 60)
+                Rectangle()
+                    .frame(width: 1)
+                    .frame(maxHeight: .infinity)
+                    .foregroundStyle(.deepSprout)
+                    .padding(.trailing, 10)
                 HStack {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("새싹 도넛 가게")
+                        Text(post.storeName)
                             .font(.pretendard(.body3))
                             .foregroundStyle(.blackSprout)
-                        Text("디저트 • 서울 영등포구 선유로9길 30")
+                        Text(post.storeInfo)
                             .font(.pretendard(.caption1))
                             .foregroundStyle(.deepSprout)
                     }

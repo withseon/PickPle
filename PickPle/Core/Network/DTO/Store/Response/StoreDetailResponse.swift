@@ -86,7 +86,7 @@ extension StoreDetailResponse {
             name: name,
             businessHours: businessHours(open: self.open, close: close),
             address: address ?? "주소 정보가 없습니다.",
-            estimatedPickupTime: "예상 소요 시간 \(estimatedPickupTime)분 (\(FormatHelper.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude)))",
+            estimatedPickupTime: "예상 소요 시간 \(estimatedPickupTime)분 (\(FormatHelper.shared.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude, unit: .kilometers)))",
             parkinGuide: parkinGuide ?? "주차 정보가 없습니다.",
             storeImageUrls: storeImageUrls,
             isPicchelin: isPicchelin,
@@ -114,11 +114,11 @@ extension StoreDetailResponse {
         var closeHour = ""
         
         if let open {
-            openHour = FormatHelper.getTime(open, isDetail: true)
+            openHour = FormatHelper.shared.getTime(open, isDetail: true)
         }
         
         if let close {
-            closeHour = FormatHelper.getTime(close, isDetail: true)
+            closeHour = FormatHelper.shared.getTime(close, isDetail: true)
         }
         
         if openHour.isEmpty && closeHour.isEmpty {

@@ -32,7 +32,7 @@ extension StoreSummaryResponse {
             storeId: storeId,
             category: category,
             name: name,
-            close: FormatHelper.getTime(close),
+            close: FormatHelper.shared.getTime(close),
             storeImageUrls: storeImageUrls,
             isPicchelin: isPicchelin,
             isPick: isPick,
@@ -41,7 +41,7 @@ extension StoreSummaryResponse {
             totalRating: "\(totalRating)",
             totalOrderCount: "\(totalOrderCount)회",
             totalReviewCount: "(\(totalReviewCount))",
-            distance: FormatHelper.formatDistance(Double(distance))
+            distance: FormatHelper.shared.formatDistance(Double(distance), unit: .kilometers)
         )
     }
 }
