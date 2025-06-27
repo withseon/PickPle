@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct CommunityView: View {
+    @StateObject var viewModel: CommunityViewModel
+    
     var body: some View {
-        MainCommunityView()
+        MainCommunityView(viewModel: viewModel)
         .padding(.top, 20)
         .background(.gray15)
         // TODO: sheet
@@ -17,6 +19,7 @@ struct CommunityView: View {
 }
 
 struct MainCommunityView: View {
+    @ObservedObject var viewModel: CommunityViewModel
     var body: some View {
         ZStack(alignment: .top) {
             VStack(spacing: 0) {
@@ -25,17 +28,17 @@ struct MainCommunityView: View {
                 ScrollView {
                     LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
                         Section {
-                            SliderSectionView()
+                            SliderSectionView(viewModel: viewModel)
                         }
                         
                         Section {
-                            ForEach(0..<10, id: \.self) { index in
+                            ForEach(viewModel.output.postSummaries, id: \.postId) { post in
                                 VStack {
-                                    CommunityPostView()
+                                    CommunityPostView(post: post)
                                         .padding(20)
                                         .background(.gray15)
                                     
-                                    if index < 9 {
+                                    if post != viewModel.output.postSummaries.last {
                                         Rectangle()
                                             .frame(height: 1)
                                             .foregroundStyle(.gray30)
@@ -80,148 +83,159 @@ struct FixedSearchHeaderView: View {
 
 // MARK: - 슬라이더 섹션
 struct SliderSectionView: View {
-    @State private var distance: Double = 300
+    @StateObject var viewModel: CommunityViewModel
     
     var body: some View {
-        CustomSliderTrack(value: $distance, range: 0...1000)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 8)
+        CustomSliderTrack(
+            distance: viewModel.output.distance,
+            range: viewModel.output.distanceRange,
+            onDistanceChange: { newDistance in
+                viewModel.action(.updateDistance(newDistance))
+            }
+        )
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Custom Slider Track
+private struct CustomSliderTrack: View {
+    let distance: Double
+    let range: ClosedRange<Double>
+    let onDistanceChange: (Double) -> Void
+    
+    private let segmentCount = 20
+    @State private var isDragging = false
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let stepSize = (range.upperBound - range.lowerBound) / Double(segmentCount)
+            let currentSegment = Int(distance / stepSize)
+            let sliderWidth = geometry.size.width - 88
+            let progress = distance / range.upperBound
+            let indicatorPosition = progress * sliderWidth
+            
+            ZStack(alignment: .top) {
+                VStack {
+                    Spacer()
+                        .frame(height: 20)
+                    HStack(spacing: 8) {
+                        Text("Distance")
+                            .font(.pretendard(.body3))
+                            .foregroundColor(.deepSprout)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(.deepSprout)
+                                    .background(.brightSprout)
+                            )
+                        
+                        HStack(spacing: 4) {
+                            ForEach(0..<segmentCount, id: \.self) { index in
+                                let isActive = index < currentSegment
+                                
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(isActive ? .blackSprout : .brightSprout)
+                                    .frame(height: 20)
+                                    .onTapGesture {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            let newDistance = Double((index + 1)) * stepSize
+                                            onDistanceChange(newDistance)
+                                        }
+                                    }
+                            }
+                        }
+                        .gesture(
+                            DragGesture()
+                                .onChanged { gesture in
+                                    isDragging = true
+                                    let segmentWidth = sliderWidth / CGFloat(segmentCount)
+                                    let position = gesture.location.x
+                                    let segmentIndex = Int(position / segmentWidth)
+                                    let clampedIndex = max(0, min(segmentIndex, segmentCount - 1))
+                                    
+                                    withAnimation(.easeInOut(duration: 0.1)) {
+                                        let newDistance = Double(clampedIndex + 1) * stepSize
+                                        onDistanceChange(newDistance)
+                                    }
+                                }
+                                .onEnded { _ in
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        isDragging = false
+                                    }
+                                }
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.gray45)
+                    )
+                }
+                
+                HStack {
+                    Spacer()
+                        .frame(width: 80)
+                    
+                    HStack {
+                        // 첫 번째 세그먼트일 때 왼쪽 정렬
+                        if currentSegment <= 1 {
+                            DistanceDetailView(distance: distance)
+                            Spacer()
+                        }
+                        // 마지막 세그먼트일 때 오른쪽 정렬
+                        else if currentSegment >= segmentCount - 1 {
+                            HStack {
+                                Spacer()
+                                DistanceDetailView(distance: distance)
+                            }
+                        }
+                        // 중간일 때 슬라이더 위치를 부드럽게 따라가며 가장자리에서는 조정
+                        else {
+                            let labelWidth: CGFloat = 80
+                            let safeMargin: CGFloat = 20
+                            let targetPosition = indicatorPosition - labelWidth/2
+                            
+                            let minPosition: CGFloat = safeMargin
+                            let maxPosition = sliderWidth - labelWidth - safeMargin
+                            let finalPosition = max(minPosition, min(maxPosition, targetPosition))
+                            
+                            HStack(spacing: 0) {
+                                Spacer()
+                                    .frame(width: finalPosition)
+                                DistanceDetailView(distance: distance)
+                                Spacer()
+                                    .frame(width: sliderWidth - finalPosition - labelWidth)
+                            }
+                        }
+                    }
+                    .frame(width: sliderWidth)
+                }
+                .transition(.opacity.combined(with: .scale))
+            }
+        }
+        .frame(height: 60)
     }
     
-    private struct CustomSliderTrack: View {
-        @Binding var value: Double
-        let range: ClosedRange<Double>
-        
-        private let segmentCount = 20
-        @State private var isDragging = false
+    private struct DistanceDetailView: View {
+        let distance: Double
         
         var body: some View {
-            GeometryReader { geometry in
-                let stepSize = (range.upperBound - range.lowerBound) / Double(segmentCount)
-                let currentSegment = Int(value / stepSize)
-                let sliderWidth = geometry.size.width - 88
-                let progress = value / range.upperBound
-                let indicatorPosition = progress * sliderWidth
-                
-                ZStack(alignment: .top) {
-                    VStack {
-                        Spacer()
-                            .frame(height: 20)
-                        HStack(spacing: 8) {
-                            Text("Distance")
-                                .font(.pretendard(.body3))
-                                .foregroundColor(.deepSprout)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .stroke(.deepSprout)
-                                        .background(.brightSprout)
-                                )
-                            
-                            HStack(spacing: 4) {
-                                ForEach(0..<segmentCount, id: \.self) { index in
-                                    let isActive = index < currentSegment
-                                    
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(isActive ? .blackSprout : .brightSprout)
-                                        .frame(height: 20)
-                                        .onTapGesture {
-                                            withAnimation(.easeInOut(duration: 0.2)) {
-                                                value = Double((index + 1)) * stepSize
-                                            }
-                                        }
-                                }
-                            }
-                            .gesture(
-                                DragGesture()
-                                    .onChanged { gesture in
-                                        isDragging = true
-                                        let segmentWidth = sliderWidth / CGFloat(segmentCount)
-                                        let position = gesture.location.x
-                                        let segmentIndex = Int(position / segmentWidth)
-                                        let clampedIndex = max(0, min(segmentIndex, segmentCount - 1))
-                                        
-                                        withAnimation(.easeInOut(duration: 0.1)) {
-                                            value = Double(clampedIndex + 1) * stepSize
-                                        }
-                                    }
-                                    .onEnded { _ in
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            isDragging = false
-                                        }
-                                    }
-                            )
-                            .frame(maxWidth: .infinity)
-                        }
-                        .padding(8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(.gray45)
-                        )
-                    }
-                    
-                        HStack {
-                            Spacer()
-                                .frame(width: 80)
-                            
-                            HStack {
-                                // 첫 번째 세그먼트일 때 왼쪽 정렬
-                                if currentSegment <= 1 {
-                                    DistanceDetailView(distance: value)
-                                    Spacer()
-                                }
-                                // 마지막 세그먼트일 때 오른쪽 정렬
-                                else if currentSegment >= segmentCount - 1 {
-                                    HStack {
-                                        Spacer()
-                                        DistanceDetailView(distance: value)
-                                    }
-                                }
-                                // 중간일 때 슬라이더 위치를 부드럽게 따라가며 가장자리에서는 조정
-                                else {
-                                    let labelWidth: CGFloat = 80
-                                    let safeMargin: CGFloat = 20
-                                    let targetPosition = indicatorPosition - labelWidth/2
-                                    
-                                    let minPosition: CGFloat = safeMargin
-                                    let maxPosition = sliderWidth - labelWidth - safeMargin
-                                    let finalPosition = max(minPosition, min(maxPosition, targetPosition))
-                                    
-                                    HStack(spacing: 0) {
-                                        Spacer()
-                                            .frame(width: finalPosition)
-                                        DistanceDetailView(distance: value)
-                                        Spacer()
-                                            .frame(width: sliderWidth - finalPosition - labelWidth)
-                                    }
-                                }
-                            }
-                            .frame(width: sliderWidth)
-                        }
-                        .transition(.opacity.combined(with: .scale))
-                }
-            }
-            .frame(height: 60)
-        }
-        
-        private struct DistanceDetailView: View {
-            let distance: Double
-            
-            var body: some View {
-                Text(distance >= 1000 ? String(format: "%.1fKM", distance/1000).replacingOccurrences(of: ".0", with: "") : "\(Int(distance))M")
-                    .font(.pretendard(.caption2))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(.blackSprout)
-                    )
-            }
+            Text(distance >= 1000 ? String(format: "%.1fKM", distance/1000).replacingOccurrences(of: ".0", with: "") : "\(Int(distance))M")
+                .font(.pretendard(.caption2))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.blackSprout)
+                )
         }
     }
 }
+
 
 // MARK: - 스티키 타임라인 헤더
 struct TimelineHeaderView: View {
@@ -256,6 +270,8 @@ struct TimelineHeaderView: View {
 
 // MARK: - 커뮤니티 포스트
 struct CommunityPostView: View {
+    let post: PostSummary
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
@@ -263,7 +279,7 @@ struct CommunityPostView: View {
                     .frame(width: 32, height: 32)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                 VStack(alignment: .leading) {
-                    Text("새싹 호로록 찹찹")
+                    Text(post.title)
                         .font(.pretendard(.caption1))
                         .foregroundStyle(.gray100)
                     Text("51분 전")
@@ -279,7 +295,7 @@ struct CommunityPostView: View {
                     "https://picsum.photos/id/20/400/300",
                     "https://picsum.photos/id/30/400/300"
                 ],
-                ratio: 4/3,
+                ratio: 5/3,
                 isPickchelin: false
             )
             .overlay(alignment: .topLeading) {
@@ -342,8 +358,4 @@ struct CommunityPostView: View {
             )
         }
     }
-}
-
-#Preview {
-    CommunityView()
 }
