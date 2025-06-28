@@ -19,7 +19,7 @@ extension StoreOrder {
         case .orders:
             return "주문순"
         case .reviews:
-            return "리뷰수"
+            return "리뷰 많은 순"
         }
     }
 }

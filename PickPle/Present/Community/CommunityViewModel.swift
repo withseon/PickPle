@@ -89,7 +89,7 @@ extension CommunityViewModel {
             .sink(with: self) { owner, result in
                 switch result {
                 case .success(let success):
-                    owner.output.postSummaries = success.data.map { $0.postSummary }
+                    owner.output.postSummaries = success.data.map { $0.asPostSummary }
                     owner.postListParam.next = success.nextCursor
                     if let limit = owner.postListParam.limit {
                         owner.isPaginationEnabled = success.data.count >= limit

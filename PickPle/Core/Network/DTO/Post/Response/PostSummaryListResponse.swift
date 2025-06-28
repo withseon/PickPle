@@ -44,7 +44,7 @@ struct PostSummaryListResponse: Decodable {
 }
 
 extension PostSummaryListResponse.PostSummaryResponse {
-    var postSummary: PostSummary {
+    var asPostSummary: PostSummary {
         return PostSummary(
             postId: postId,
             category: category,
@@ -71,6 +71,13 @@ extension PostSummaryListResponse.PostSummaryResponse {
             updatedAt: updatedAt,
             distance: FormatHelper.shared.getDistance(latitude: geolocation.latitude, longitude: geolocation.longitude, unit: .auto),
             createdFromNow: FormatHelper.shared.getTimeAgo(from: createdAt)
+        )
+    }
+    
+    var asPostThumbnail: PostThumbnail {
+        return PostThumbnail(
+            postId: postId,
+            mainImageUrl: files.first
         )
     }
 }

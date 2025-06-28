@@ -10,6 +10,7 @@ import Alamofire
 
 enum PostRouter {
     case posts(_ request: PostSummaryRequest)
+    case userPosts(_ request: UserPostsRequest)
 }
 
 extension PostRouter: TargetType {
@@ -24,12 +25,14 @@ extension PostRouter: TargetType {
         switch self {
         case .posts:
             return "/v1/posts/geolocation"
+        case .userPosts(let request):
+            return "/v1/posts/users/\(request.userId)"
         }
     }
     
     var method: HTTPMethod {
         switch self {
-        case .posts:
+        case .posts, .userPosts:
             return .get
         }
     }
@@ -37,6 +40,8 @@ extension PostRouter: TargetType {
     var parameters: RequestParams? {
         switch self {
         case .posts(let request):
+            return .query(request)
+        case .userPosts(let request):
             return .query(request)
         }
     }

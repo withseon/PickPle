@@ -10,6 +10,7 @@ import Combine
 
 protocol PostRepository {
     func postList(_ param: PostListParam) -> AnyPublisher<Result<PostSummaryListResponse, NetworkError>, Never>
+    func userPosts(_ param: UserPostsParam) -> AnyPublisher<Result<PostSummaryListResponse, NetworkError>, Never>
 }
 
 final class DefaultPostRepository: PostRepository {
@@ -36,6 +37,35 @@ final class DefaultPostRepository: PostRepository {
                         orderBy: param.orderBy?.rawValue)
                     let postList = try await networkManager.request(
                         target: PostRouter.posts(dto),
+                        responseType: PostSummaryListResponse.self,
+                        errorType: UserErrorResponse.self
+                    )
+                    promise(.success(.success(postList)))
+                } catch {
+                    if case let NetworkError.server(serverError) = error {
+                        promise(.success(.failure(.server(serverError))))
+                    } else {
+                        promise(.success(.failure(.unknown(error))))
+                    }
+                }
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+    
+    func userPosts(_ param: UserPostsParam) -> AnyPublisher<Result<PostSummaryListResponse, NetworkError>, Never> {
+        return Future { promise in
+            Task { [weak self] in
+                guard let self else { return }
+                do {
+                    let dto = UserPostsRequest(
+                        category: param.category,
+                        limit: param.limit,
+                        next: param.next,
+                        userId: param.userId
+                    )
+                    let postList = try await networkManager.request(
+                        target: PostRouter.userPosts(dto),
                         responseType: PostSummaryListResponse.self,
                         errorType: UserErrorResponse.self
                     )

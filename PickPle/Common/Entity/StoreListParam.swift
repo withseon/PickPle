@@ -14,6 +14,6 @@ struct StoreListParam {
     var orderBy: StoreOrder?
     
     static var empty: Self {
-        return .init(category: nil, next: nil, limit: 20, orderBy: nil)
+        return .init(limit: 20)
     }
 }
