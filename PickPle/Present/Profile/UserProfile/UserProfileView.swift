@@ -12,8 +12,8 @@ enum ProfileTab: String, CaseIterable {
     case reviews = "리뷰"
 }
 
-struct ProfileView: View {
-    @StateObject var viewModel: ProfileViewModel
+struct UserProfileView: View {
+    @StateObject var viewModel: UserProfileViewModel
     var body: some View {
         VStack {
             MainProfileView(viewModel: viewModel)
@@ -25,7 +25,7 @@ struct ProfileView: View {
 }
 
 struct MainProfileView: View {
-    @ObservedObject var viewModel: ProfileViewModel
+    @ObservedObject var viewModel: UserProfileViewModel
     
     var body: some View {
         ScrollView {
@@ -50,7 +50,7 @@ struct MainProfileView: View {
 }
 
 struct TabSectionHeaderView: View {
-    @ObservedObject var viewModel: ProfileViewModel
+    @ObservedObject var viewModel: UserProfileViewModel
     
     var body: some View {
         HStack(spacing: 0) {
@@ -77,7 +77,7 @@ struct TabSectionHeaderView: View {
 }
 
 struct PostsGridView: View {
-    @ObservedObject var viewModel: ProfileViewModel
+    @ObservedObject var viewModel: UserProfileViewModel
     
     var body: some View {
         if viewModel.output.posts.isEmpty {
@@ -137,7 +137,7 @@ struct ReviewItemView: View {
 }
 
 struct ProfileInfoHeaderView: View {
-    @ObservedObject var viewModel: ProfileViewModel
+    @ObservedObject var viewModel: UserProfileViewModel
     
     var body: some View {
         VStack(spacing: 20) {
@@ -151,7 +151,7 @@ struct ProfileInfoHeaderView: View {
     }
     
     private struct ProfileImageView: View {
-        @ObservedObject var viewModel: ProfileViewModel
+        @ObservedObject var viewModel: UserProfileViewModel
         
         var body: some View {
             ZStack(alignment: .bottomTrailing) {
@@ -164,10 +164,19 @@ struct ProfileInfoHeaderView: View {
                                 .stroke(.deepSprout)
                         )
                         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    CachedAsyncImage(path: viewModel.output.profileImage, width: 136, height: 136)
-                        .clipShape (
-                            Circle()
-                        )
+                    if viewModel.output.profileImage.isEmpty {
+                        Image("empty_profile")
+                            .resizable()
+                            .frame(width: 136, height: 136)
+                            .clipShape(
+                                Circle()
+                            )
+                    } else {
+                        CachedAsyncImage(path: viewModel.output.profileImage, width: 136, height: 136)
+                            .clipShape (
+                                Circle()
+                            )
+                    }
                 }
                 Circle()
                     .fill(.gray0)
@@ -191,7 +200,7 @@ struct ProfileInfoHeaderView: View {
     }
     
     private struct ProfileInfoView: View {
-        @ObservedObject var viewModel: ProfileViewModel
+        @ObservedObject var viewModel: UserProfileViewModel
         var body: some View {
             VStack(spacing: 12) {
                 Text(viewModel.output.nickname)
@@ -202,6 +211,6 @@ struct ProfileInfoHeaderView: View {
 }
 
 #Preview {
-    ProfileView(viewModel: ProfileViewModel(postRepository: DefaultPostRepository(networkManager: NetworkManager()), user: UserInfo(
-        userId: "66115b1197488f90d3e7e6e5", nickname: "re_jack", profileImage: "/data/profiles/1712413657554.png")))
+    UserProfileView(viewModel: UserProfileViewModel(postRepository: DefaultPostRepository(networkManager: NetworkManager()), user: UserInfo(
+        userId: "66115b1197488f90d3e7e6e5", nickname: "re_jack", profileImage: "")))
 }

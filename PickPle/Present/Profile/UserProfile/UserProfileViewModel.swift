@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-final class ProfileViewModel: BaseViewModel, ViewModelType {
+final class UserProfileViewModel: BaseViewModel, ViewModelType {
     var input = Input()
     @Published var output = Output()
     var cancellables = Set<AnyCancellable>()
@@ -26,7 +26,7 @@ final class ProfileViewModel: BaseViewModel, ViewModelType {
 }
 
 // MARK: - Input/Output
-extension ProfileViewModel {
+extension UserProfileViewModel {
     struct Input {
         let fetchDataTrigger = PassthroughSubject<Void, Never>()
         let selectTabTrigger = PassthroughSubject<ProfileTab, Never>()
@@ -72,7 +72,7 @@ extension ProfileViewModel {
 }
 
 // MARK: - Action
-extension ProfileViewModel {
+extension UserProfileViewModel {
     enum Action {
         case fetchData
         case selectTab(_ tab: ProfileTab)
