@@ -134,7 +134,6 @@
 		2CDCF52F2DCF3BE1007389FD /* JalnanGothicTTF.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF52E2DCF3BE1007389FD /* JalnanGothicTTF.ttf */; };
 		2CDCF5F92DCF40CB007389FD /* Font+.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF5F82DCF40CB007389FD /* Font+.swift */; };
 		2CDCF6562DCF5F99007389FD /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF6552DCF5F99007389FD /* SplashView.swift */; };
-		2CDCF6592DCF66F9007389FD /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF6582DCF66F9007389FD /* MainTabView.swift */; };
 		2CDCF65C2DCF6C3A007389FD /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF65B2DCF6C3A007389FD /* SignInView.swift */; };
 		2CDCF6B62DCF8769007389FD /* ButtonWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF6B52DCF8769007389FD /* ButtonWrapper.swift */; };
 		2CDCF6BB2DCF92A7007389FD /* PrimaryButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF6BA2DCF92A7007389FD /* PrimaryButton.swift */; };
@@ -296,7 +295,6 @@
 		2CDCF5302DCF3C49007389FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2CDCF5F82DCF40CB007389FD /* Font+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+.swift"; sourceTree = "<group>"; };
 		2CDCF6552DCF5F99007389FD /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
-		2CDCF6582DCF66F9007389FD /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		2CDCF65B2DCF6C3A007389FD /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		2CDCF6B52DCF8769007389FD /* ButtonWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonWrapper.swift; sourceTree = "<group>"; };
 		2CDCF6BA2DCF92A7007389FD /* PrimaryButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryButton.swift; sourceTree = "<group>"; };
@@ -861,7 +859,6 @@
 				2CDCF6B72DCF900A007389FD /* Component */,
 				2C9299092DE34AD500DF74BA /* CoordinatorView */,
 				2CDCF6552DCF5F99007389FD /* SplashView.swift */,
-				2CDCF6582DCF66F9007389FD /* MainTabView.swift */,
 				2CDCF65A2DCF6C06007389FD /* SignIn */,
 				2CDCF6C72DD03A95007389FD /* SignUp */,
 				2C929A7B2DF48AE300DF74BA /* Profile */,
@@ -1143,7 +1140,6 @@
 				2C01ADBF2DDEEF7900BA56CC /* StoreRouter.swift in Sources */,
 				2CDCF6BB2DCF92A7007389FD /* PrimaryButton.swift in Sources */,
 				2C929A932DF8AFD000DF74BA /* PostRepository.swift in Sources */,
-				2CDCF6592DCF66F9007389FD /* MainTabView.swift in Sources */,
 				2C0528FB2E2D68CF001BC29D /* ChatMessage.swift in Sources */,
 				2CE4C9492DD74FDF00C23C3A /* SignUpViewModel.swift in Sources */,
 				2C01AFC82DE068BD00BA56CC /* PickChelinTagView.swift in Sources */,

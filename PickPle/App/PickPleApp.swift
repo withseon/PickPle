@@ -22,6 +22,7 @@ struct PickPleApp: App {
     var body: some Scene {
         WindowGroup {
             if isActive {
+                AppCoordinatorView()
                     .onOpenURL(perform: { url in
                         if AuthApi.isKakaoTalkLoginUrl(url) {
                             _ = AuthController.handleOpenUrl(url: url)
