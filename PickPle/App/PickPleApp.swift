@@ -12,7 +12,6 @@ import KakaoSDKAuth
 @main
 struct PickPleApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var coordinator = Coordinator()
     @State private var isActive = false
     
     init() {
@@ -23,7 +22,6 @@ struct PickPleApp: App {
     var body: some Scene {
         WindowGroup {
             if isActive {
-                CoordinatorView(coordinator: coordinator)
                     .onOpenURL(perform: { url in
                         if AuthApi.isKakaoTalkLoginUrl(url) {
                             _ = AuthController.handleOpenUrl(url: url)
