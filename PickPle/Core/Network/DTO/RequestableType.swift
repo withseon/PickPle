@@ -8,13 +8,18 @@
 import Foundation
 
 protocol RequestableType: Encodable {
+    var keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy { get }
     var toParameter : [String: Any] { get }
 }
 
 extension RequestableType {
+    var keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy {
+        return .convertToSnakeCase
+    }
+    
     var toParameter : [String: Any] {
         let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.keyEncodingStrategy = keyEncodingStrategy
         guard let object = try? encoder.encode(self) else { return [:] }
         guard let parameter = try? JSONSerialization.jsonObject(with: object) as? [String: Any] else { return [:] }
         return parameter
