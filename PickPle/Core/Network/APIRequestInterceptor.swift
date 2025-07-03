@@ -55,72 +55,76 @@ final class APIRequestInterceptor: RequestInterceptor, @unchecked Sendable {
             return
         }
         
+        // 요청 등록 및 갱신 여부 결정
         lock.lock()
-        defer { lock.unlock() }
         requestForRetry.append(completion)
-        
-        if !isRefreshing {
+        let shouldStartRefresh = !isRefreshing
+        if shouldStartRefresh {
             isRefreshing = true
+        }
+        lock.unlock()
+        
+        // 필요 시 토큰 갱신
+        if shouldStartRefresh {
+            performTokenRefresh()
+        }
+    }
+    
+    private func performTokenRefresh() {
+        SecureTokenManager.shared.retrieveAndDecryptTokens(forKeys: (SecureKey.ACCESS_TOKEN, SecureKey.REFRESH_TOKEN)) { [weak self] result in
+            guard let self else { return }
             
-            SecureTokenManager.shared.retrieveAndDecryptTokens(forKeys: (SecureKey.ACCESS_TOKEN, SecureKey.REFRESH_TOKEN)) { [weak self] result in
-                guard let self else { return }
-                
-                switch result {
-                case .success(let tokens):
-                    lock.lock()
+            switch result {
+            case .success(let tokens):
+                Task { [weak self] in
+                    guard let self else { return }
                     
-                    Task { [weak self] in
-                        guard let self else { return }
-                        
-                        let decoder = JSONDecoder()
-                        decoder.keyDecodingStrategy = .convertFromSnakeCase
-                        
-                        let request = AF.request(AuthRouter.refresh(tokens.accessToken, tokens.refreshToken))
-                            .validate(statusCode: 200...299)
-                            .serializingDecodable(RefreshResponse.self, decoder: decoder)
-                        do {
-                            let value = try await request.value
-                            SecureTokenManager.shared.encryptAndStoreToken(token: value.refreshToken, forKey: SecureKey.REFRESH_TOKEN) { [weak self] result in
-                                guard let self else { return }
-                                switch result {
-                                case .success:
-                                    SecureTokenManager.shared.encryptAndStoreToken(token: value.accessToken, forKey: SecureKey.ACCESS_TOKEN) { [weak self] result in
-                                        guard let self else { return }
-                                        defer {
-                                            lock.unlock()
-                                            isRefreshing = false
-                                            requestForRetry.removeAll()
-                                        }
-                                        
-                                        switch result {
-                                        case .success:
-                                            requestForRetry.forEach { $0(.retry) }
-                                        case .failure(let error):
-                                            requestForRetry.forEach { $0(.doNotRetryWithError(error)) }
-                                        }
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    
+                    let request = AF.request(AuthRouter.refresh(tokens.accessToken, tokens.refreshToken))
+                        .validate(statusCode: 200...299)
+                        .serializingDecodable(RefreshResponse.self, decoder: decoder)
+                    do {
+                        let value = try await request.value
+                        SecureTokenManager.shared.encryptAndStoreToken(token: value.refreshToken, forKey: SecureKey.REFRESH_TOKEN) { [weak self] result in
+                            guard let self else { return }
+                            switch result {
+                            case .success:
+                                SecureTokenManager.shared.encryptAndStoreToken(token: value.accessToken, forKey: SecureKey.ACCESS_TOKEN) { [weak self] result in
+                                    guard let self else { return }
+                                    
+                                    switch result {
+                                    case .success:
+                                        self.completeTokenRefresh(with: .retry)
+                                    case .failure(let error):
+                                        self.completeTokenRefresh(with: .doNotRetryWithError(error))
                                     }
-                                case .failure(let error):
-                                    requestForRetry.forEach { $0(.doNotRetryWithError(error)) }
-                                    lock.unlock()
-                                    isRefreshing = false
-                                    requestForRetry.removeAll()
                                 }
+                            case .failure(let error):
+                                self.completeTokenRefresh(with: .doNotRetryWithError(error))
                             }
-                        } catch {
-                            let error = NetworkError.expired
-                            requestForRetry.forEach { $0(.doNotRetryWithError(error)) }
-                            
-                            lock.unlock()
-                            isRefreshing = false
-                            requestForRetry.removeAll()
                         }
-                    }
-                case .failure:
-                    requestForRetry.forEach {
-                        $0(.doNotRetryWithError(NetworkError.expired))
+                    } catch {
+                        let error = NetworkError.expired
+                        self.completeTokenRefresh(with: .doNotRetryWithError(error))
                     }
                 }
+            case .failure:
+                self.completeTokenRefresh(with: .doNotRetryWithError(NetworkError.expired))
             }
         }
+    }
+    
+    // 모든 대기 중인 요청에 결과 전달
+    private func completeTokenRefresh(with result: RetryResult) {
+        lock.lock()
+        let pendingRequests = requestForRetry
+        requestForRetry.removeAll()
+        isRefreshing = false
+        lock.unlock()
+        
+        // 콜백 실행
+        pendingRequests.forEach { $0(result) }
     }
 }
