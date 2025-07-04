@@ -33,17 +33,14 @@ struct CoordinatorView: View {
     }
     
     @StateObject private var loginObserver = LoginObserver()
-    @ObservedObject var coordinator: Coordinator
+    @ObservedObject var coordinator: AppCoordinator
     private var rootState: RootState { loginObserver.isLogin ? .authenticated(.main) : .login }
     
     var body: some View {
         NavigationStack(path: Binding { coordinator.path } set: { _ in }) {
-            setRoot(rootState)
-                .navigationDestination(for: PushItem.self) { item in
-                    coordinator.build(item)
-                }
-                .sheet(item: Binding { coordinator.sheet } set: { _ in }) { item in
-                    coordinator.buildSheet(item)
+            coordinator.currentView
+                .navigationDestination(for: AppRoute.self) { route in
+                    coordinator.build(route)
                 }
         }
         .environmentObject(loginObserver)
@@ -53,19 +50,6 @@ struct CoordinatorView: View {
                 loginObserver.isLogin = true
             } catch {
                 loginObserver.isLogin = false
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func setRoot(_ item: RootState) -> some View {
-        switch item {
-        case .login:
-            SignInView(viewModel: SignInViewModel(userRepository: coordinator.diContainer.userRepository))
-        case .authenticated(let item):
-            switch item {
-            case .main:
-                MainView(viewModel: MainViewModel(storeRepository: coordinator.diContainer.storeRepository))
             }
         }
     }

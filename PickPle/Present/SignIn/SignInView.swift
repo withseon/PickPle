@@ -6,10 +6,10 @@
 //
 
 import SwiftUI
-import KakaoSDKUser
 
 struct SignInView: View {
-    @EnvironmentObject var loginObserver: LoginObserver
+//    @EnvironmentObject var loginObserver: LoginObserver
+    @EnvironmentObject var coordinator: AuthCoordinator
     @StateObject var viewModel: SignInViewModel
     @State var email: String = ""
     @State var password: String = ""
@@ -75,7 +75,7 @@ struct SignInView: View {
                         viewModel.action(.kakaoLoginButtonTapped)
                     }
             }
-            NavigationLink(value: PushItem.signup) {
+            NavigationLink(value: AuthRoute.signup) {
                 Text("회원가입")
                     .font(.pretendard(.body3))
                     .foregroundStyle(.gray75)
@@ -95,7 +95,7 @@ struct SignInView: View {
             }
         }
         .onReceive(viewModel.output.pushMainTrigger) { _ in
-            loginObserver.isLogin = true
+            coordinator.succeedLogin()
         }
         .background(Color(.systemBackground))
         .onTapGesture {

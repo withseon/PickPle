@@ -154,7 +154,7 @@ private struct StoreListView: View {
             Section {
                 ForEach(viewModel.output.storeSummaries, id: \.storeId) { store in
                     ZStack {
-                        NavigationLink(value: PushItem.storeDetail(store.storeId)) {
+                        NavigationLink(value: HomeRoute.storeDetail(store.storeId)) {
                             EmptyView()
                         }
                         .opacity(0)
@@ -218,7 +218,7 @@ private struct StoreHeaderView: View {
                     ScrollView(.horizontal) {
                         LazyHStack {
                             ForEach(viewModel.output.popularStores, id: \.storeId) { store in
-                                NavigationLink(value: PushItem.storeDetail(store.storeId)) {
+                                NavigationLink(value: HomeRoute.storeDetail(store.storeId)) {
                                     PopularStoreView(viewModel: viewModel, store: store)
                                 }
                             }
