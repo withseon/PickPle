@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct UserInfo: Equatable {
+struct UserInfo: Equatable, Hashable {
     let userId: String
     let nickname: String
     let profileImage: String?
