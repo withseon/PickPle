@@ -15,6 +15,8 @@ final class DIContainer: ObservableObject {
     let userRepository: UserRepository
     let storeRepository: StoreRepository
     let postRepository: PostRepository
+    let chatRepository: ChatRepository
+    let realmRepository: RealmRepository
     
     init() {
         self.locationManager = LocationManager()
@@ -22,5 +24,7 @@ final class DIContainer: ObservableObject {
         self.userRepository = DefaultUserRepository(networkManager: networkManager)
         self.storeRepository = DefaultStoreRepository(networkManager: networkManager)
         self.postRepository = DefaultPostRepository(networkManager: networkManager)
+        self.chatRepository = DefaultChatRepository(networkManager: networkManager)
+        self.realmRepository = DefaultRealmRepository()
     }
 }
