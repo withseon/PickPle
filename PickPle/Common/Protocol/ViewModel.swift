@@ -20,12 +20,13 @@ protocol ViewModelType: AnyObject, ObservableObject {
     func transform()
 }
 
-//final class ViewModel: ViewModelType {
+//final class ViewModel: BaseViewModel, ViewModelType {
 //    var input = Input()
 //    @Published var output = Output()
 //    var cancellables = Set<AnyCancellable>()
 //
-//    init() {
+//    override init() {
+//        super.init()
 //        transform()
 //    }
 //}
