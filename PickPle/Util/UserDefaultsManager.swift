@@ -9,11 +9,39 @@ import Foundation
 
 struct UserDefaultsManager {
     private enum Key: String {
+        case userId
         case selectedLocation
     }
     
+    @UserDefaultStringWrapper(key: Key.userId.rawValue, defaultValue: nil)
+    static var userId: String?
+    
     @UserDefaultWrapper(key: Key.selectedLocation.rawValue, defaultValue: nil)
     static var selectedLocation: Location?
+}
+
+@propertyWrapper
+struct UserDefaultStringWrapper {
+    let key: String
+    let defaultValue: String?
+    
+    init(key: String, defaultValue: String?) {
+        self.key = key
+        self.defaultValue = defaultValue
+    }
+    
+    var wrappedValue: String? {
+        get {
+            return UserDefaults.standard.string(forKey: key) ?? defaultValue
+        }
+        set {
+            if let newValue {
+                UserDefaults.standard.set(newValue, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+    }
 }
 
 @propertyWrapper
