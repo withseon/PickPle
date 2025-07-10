@@ -15,10 +15,17 @@ final class FormatHelper {
     static let shared = FormatHelper()
     
     private let dateFormatter: DateFormatter
+    private let koreanTimeFormatter: DateFormatter
+
     
     private init() {
         dateFormatter = DateFormatter()
         dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
+        
+        // 한국 시간 변환용 formatter 추가
+        koreanTimeFormatter = DateFormatter()
+        koreanTimeFormatter.timeZone = TimeZone(identifier: "Asia/Seoul")
+        koreanTimeFormatter.locale = Locale(identifier: "en_US")
     }
     
     func getTime(_ text: String, isDetail: Bool = false) -> String {
@@ -123,5 +130,19 @@ final class FormatHelper {
         default:
             return "\(years)년 전"
         }
+    }
+        
+    func getChatTime(from utcString: String) -> String {
+        // "9999-05-06T05:13:54.357Z"
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        var date = dateFormatter.date(from: utcString)
+        
+        guard let date = dateFormatter.date(from: utcString) else {
+            return ""
+        }
+        
+        // 한국 시간으로 변환
+        koreanTimeFormatter.dateFormat = "hh:mma"
+        return koreanTimeFormatter.string(from: date)
     }
 }
