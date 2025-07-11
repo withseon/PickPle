@@ -37,6 +37,7 @@ extension ChatRoomViewModel {
     }
 
     struct Output {
+        var isInitialLoading = true
         var chatMessages = [ChatMessage]()
     }
 
@@ -70,9 +71,13 @@ extension ChatRoomViewModel {
                     }
                     DispatchQueue.main.async {
                         owner.output.chatMessages.append(contentsOf: response.data.map { $0.asChatMessage })
+                        owner.output.isInitialLoading = false
                     }
                 case .failure(let error):
                     print(error)
+                    DispatchQueue.main.async {
+                        owner.output.isInitialLoading = false
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -80,6 +85,7 @@ extension ChatRoomViewModel {
         socketService.connect(roomId)
         setupSocketListener()
     }
+
     
     private func setupSocketListener() {
         socketService.onMessageReceived = { [weak self] message in

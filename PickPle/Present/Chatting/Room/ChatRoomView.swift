@@ -36,17 +36,24 @@ struct ChatRoomView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 20)
                 }
-                .onAppear {
-                    scrollToBottom(proxy: proxy, animated: false)
-                }
-                .onChange(of: viewModel.output.chatMessages.count) { _ in
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        scrollToBottom(proxy: proxy, animated: true)
+                .opacity(viewModel.output.isInitialLoading ? 0 : 1)
+                .onChange(of: viewModel.output.isInitialLoading) { isLoading in
+                    if !isLoading {
+                        DispatchQueue.main.async {
+                            scrollToBottom(proxy: proxy, animated: false)
+                        }
                     }
                 }
                 .onChange(of: scrollTarget) { _ in
                     scrollToBottom(proxy: proxy, animated: true)
                 }
+            }
+            
+            if viewModel.output.isInitialLoading {
+                Spacer()
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                Spacer()
             }
             
             // 메시지 입력창
