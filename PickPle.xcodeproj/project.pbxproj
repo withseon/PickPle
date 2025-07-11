@@ -49,7 +49,6 @@
 		2C05288A2E2D2369001BC29D /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 2C0528882E2D235C001BC29D /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		2C05288D2E2D2639001BC29D /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 2C05288C2E2D2639001BC29D /* SocketIO */; };
 		2C0528912E2D2BF3001BC29D /* SocketService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0528902E2D2BF3001BC29D /* SocketService.swift */; };
-		2C0528932E2D44CE001BC29D /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0528922E2D44CE001BC29D /* ChatView.swift */; };
 		2C0528ED2E2D5793001BC29D /* ChatRoomTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0528EC2E2D5793001BC29D /* ChatRoomTable.swift */; };
 		2C0528EF2E2D5916001BC29D /* ChatMessageTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0528EE2E2D5916001BC29D /* ChatMessageTable.swift */; };
 		2C0528F12E2D5975001BC29D /* RealmRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0528F02E2D5975001BC29D /* RealmRepository.swift */; };
@@ -211,7 +210,6 @@
 		2C0528832E2CFEE8001BC29D /* ChatFileResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatFileResponse.swift; sourceTree = "<group>"; };
 		2C0528852E2D1767001BC29D /* ChatRoomThumbnail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRoomThumbnail.swift; sourceTree = "<group>"; };
 		2C0528902E2D2BF3001BC29D /* SocketService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketService.swift; sourceTree = "<group>"; };
-		2C0528922E2D44CE001BC29D /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		2C0528EC2E2D5793001BC29D /* ChatRoomTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRoomTable.swift; sourceTree = "<group>"; };
 		2C0528EE2E2D5916001BC29D /* ChatMessageTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageTable.swift; sourceTree = "<group>"; };
 		2C0528F02E2D5975001BC29D /* RealmRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmRepository.swift; sourceTree = "<group>"; };
@@ -623,7 +621,6 @@
 			children = (
 				2C0528632E2C27A0001BC29D /* Room */,
 				2C0528622E2C279A001BC29D /* List */,
-				2C0528922E2D44CE001BC29D /* ChatView.swift */,
 			);
 			path = Chatting;
 			sourceTree = "<group>";
@@ -1127,7 +1124,6 @@
 				2C1E91462DDA09FB005DA7B5 /* LoginResponse.swift in Sources */,
 				2C929A832DF48B1B00DF74BA /* CommunityViewModel.swift in Sources */,
 				2CDCF6BF2DCFA42E007389FD /* ClearableTextField.swift in Sources */,
-				2C0528932E2D44CE001BC29D /* ChatView.swift in Sources */,
 				2CDCF6C92DD03AB1007389FD /* SignUpEmailView.swift in Sources */,
 				2C1E8FD12DD9BE6C005DA7B5 /* BaseViewModel.swift in Sources */,
 				2CE4C94B2DD77D9D00C23C3A /* APIEventLogger.swift in Sources */,

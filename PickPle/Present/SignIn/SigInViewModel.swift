@@ -170,6 +170,7 @@ extension SignInViewModel {
     private func singInKakao(_ accessToken: String) {
         let publish = userRepository.loginKakako(accessToken)
         publish
+            .receive(on: DispatchQueue.main)
             .sink(with: self) { owner, result in
                 switch result {
                 case .success(_):

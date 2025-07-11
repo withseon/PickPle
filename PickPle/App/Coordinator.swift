@@ -376,13 +376,7 @@ struct OrderCoordinatorView: View {
     @EnvironmentObject var orderCoordinator: OrderCoordinator
     
     var body: some View {
-        
-        NavigationStack(path: orderCoordinator.getPath) {
-            SocketTestView()
-                .navigationDestination(for: OrderRoute.self) { route in
-                    build(route)
-                }
-        }
+        EmptyView()
     }
     
     @ViewBuilder
