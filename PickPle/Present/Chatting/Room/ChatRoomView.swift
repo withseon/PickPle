@@ -12,6 +12,8 @@ struct ChatRoomView: View {
     @StateObject var viewModel: ChatRoomViewModel
     @State private var newMessage = ""
     @State private var scrollTarget: Int = 0
+    @State private var showFileOptions = false
+    @State private var keyboardHeight: CGFloat = 0
     @FocusState private var isTextFieldFocused: Bool
     
     var nick: String
@@ -60,18 +62,93 @@ struct ChatRoomView: View {
             MessageInputBar(
                 newMessage: $newMessage,
                 isTextFieldFocused: $isTextFieldFocused,
-                onSend: sendMessage
+                showFileOptions: showFileOptions,
+                onSend: sendMessage,
+                onPlusButtonTapped: {
+                    handlePlusButtonTap()
+                },
+                onTextFieldTapped: {
+                    handleTextFieldTap()
+                }
             )
+            
+            // 파일 옵션 뷰 (MessageInputBar 아래)
+            if showFileOptions {
+                FileOptionsView(
+                    onImageTap: {
+                        print("앨범 선택")
+                        dismissFileOptions()
+                    },
+                    onCameraTap: {
+                        print("카메라 촬영")
+                        dismissFileOptions()
+                    }
+                )
+                .frame(height: max(keyboardHeight, 200))
+                .background(.gray15)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .navigationTitle(nick)
         .navigationBarTitleDisplayMode(.inline)
         .background(.gray15)
         .onTapGesture {
-            isTextFieldFocused = false
+            dismissAll()
         }
         .task {
             viewModel.action(.fetchMessages)
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                keyboardHeight = keyboardFrame.height
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardHeight = 0
+        }
+    }
+    
+    private func handlePlusButtonTap() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            if showFileOptions {
+                showFileOptions = false
+            } else if isTextFieldFocused {
+                // 키보드가 올라와있으면 키보드를 먼저 내림
+                isTextFieldFocused = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showFileOptions = true
+                    }
+                }
+            } else {
+                // 키보드가 없으면 바로 파일 옵션 표시
+                showFileOptions = true
+            }
+        }
+    }
+    
+    private func handleTextFieldTap() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            if showFileOptions {
+                // 닫고 키보드 올림
+                showFileOptions = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    isTextFieldFocused = true
+                }
+            } else {
+                // 즉시 키보드 올림
+                isTextFieldFocused = true
+            }
+        }
+    }
+    
+    private func dismissFileOptions() {
+        showFileOptions = false
+    }
+    
+    private func dismissAll() {
+        isTextFieldFocused = false
+        showFileOptions = false
     }
     
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
@@ -94,6 +171,59 @@ struct ChatRoomView: View {
         newMessage = ""
         
         triggerScroll()
+    }
+}
+
+// 파일 옵션 뷰
+struct FileOptionsView: View {
+    let onImageTap: () -> Void
+    let onCameraTap: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider()
+            Spacer()
+            HStack(spacing: 40) {
+                FileOptionButton(
+                    icon: "photo",
+                    title: "사진",
+                    action: onImageTap
+                )
+                
+                FileOptionButton(
+                    icon: "camera",
+                    title: "카메라",
+                    action: onCameraTap
+                )
+            }
+            
+            Spacer()
+        }
+        .background(.gray15)
+    }
+}
+
+// 파일 옵션 버튼
+struct FileOptionButton: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Button(action: action) {
+                Image(systemName: icon)
+                    .frame(width: 50, height: 50)
+                    .foregroundColor(.blackSprout)
+                    .background(.gray0)
+                    .clipShape(Circle())
+                    .shadow(color: .gray100.opacity(0.1), radius: 2, x: 0, y: 1)
+            }
+            
+            Text(title)
+                .font(.pretendard(.caption1))
+                .foregroundColor(.gray100)
+        }
     }
 }
 
@@ -151,19 +281,41 @@ struct MessageBubble: View {
 struct MessageInputBar: View {
     @Binding var newMessage: String
     @FocusState.Binding var isTextFieldFocused: Bool
+    let showFileOptions: Bool
     let onSend: () -> Void
+    let onPlusButtonTapped: () -> Void
+    let onTextFieldTapped: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
             Divider()
             
             HStack(spacing: 12) {
+                // 파일 전송
+                ZStack {
+                    Image(systemName: "plus")
+                        .iconFrame(20)
+                        .foregroundColor(.gray60)
+                        .wrapToButton {
+                            onPlusButtonTapped()
+                        }
+                        .opacity(showFileOptions ? 0 : 1)
+                    
+                    Image(systemName: "xmark")
+                        .iconFrame(20)
+                        .foregroundColor(.gray60)
+                        .wrapToButton {
+                            onPlusButtonTapped()
+                        }
+                        .opacity(showFileOptions ? 1 : 0)
+                }
+                
                 // 텍스트 입력 필드
                 TextField("메시지를 입력하세요...", text: $newMessage, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(Color(.systemBackground))
+                    .background(.gray0)
                     .clipShape(RoundedRectangle(cornerRadius: 20))
                     .overlay(
                         RoundedRectangle(cornerRadius: 20)
@@ -173,12 +325,18 @@ struct MessageInputBar: View {
                     .onSubmit {
                         onSend()
                     }
+                    .simultaneousGesture(
+                        TapGesture().onEnded {
+                            onTextFieldTapped()
+                        }
+                    )
                 
                 // 전송 버튼
-                Button(action: onSend) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .iconFrame(20)
-                        .foregroundColor(newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray60 : .blackSprout)
+                Image(systemName: "arrow.up.circle.fill")
+                    .iconFrame(20)
+                    .foregroundStyle(newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray60 : .blackSprout)
+                .wrapToButton {
+                    onSend()
                 }
                 .disabled(newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
