@@ -123,6 +123,8 @@
 		2C9965E62DDC46C500D09D0B /* ViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C9965E52DDC46C500D09D0B /* ViewModel.swift */; };
 		2CA7457E2DE1AFEC0014155D /* UserDefaultsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA7457D2DE1AFEC0014155D /* UserDefaultsManager.swift */; };
 		2CA746F32DE1D1A10014155D /* StoreGalleryImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA746F22DE1D1A10014155D /* StoreGalleryImageView.swift */; };
+		2CD3745E2E36BA8D005A3EF8 /* SendFileRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CD3745D2E36BA8D005A3EF8 /* SendFileRequest.swift */; };
+		2CD374602E36C2B4005A3EF8 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CD3745F2E36C2B4005A3EF8 /* DocumentPicker.swift */; };
 		2CDCF4442DCE2659007389FD /* PickPleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CDCF4412DCE2659007389FD /* PickPleApp.swift */; };
 		2CDCF4452DCE2659007389FD /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF43D2DCE2659007389FD /* Preview Assets.xcassets */; };
 		2CDCF4462DCE2659007389FD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2CDCF43F2DCE2659007389FD /* Assets.xcassets */; };
@@ -281,6 +283,8 @@
 		2C9965E52DDC46C500D09D0B /* ViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModel.swift; sourceTree = "<group>"; };
 		2CA7457D2DE1AFEC0014155D /* UserDefaultsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsManager.swift; sourceTree = "<group>"; };
 		2CA746F22DE1D1A10014155D /* StoreGalleryImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreGalleryImageView.swift; sourceTree = "<group>"; };
+		2CD3745D2E36BA8D005A3EF8 /* SendFileRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendFileRequest.swift; sourceTree = "<group>"; };
+		2CD3745F2E36C2B4005A3EF8 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
 		2CDCF42B2DCE2624007389FD /* PickPle.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PickPle.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2CDCF43D2DCE2659007389FD /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2CDCF43F2DCE2659007389FD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -432,6 +436,7 @@
 			children = (
 				2C0528682E2C27BF001BC29D /* ChatRoomView.swift */,
 				2C0528662E2C27B7001BC29D /* ChatRoomViewModel.swift */,
+				2CD3745F2E36C2B4005A3EF8 /* DocumentPicker.swift */,
 			);
 			path = Room;
 			sourceTree = "<group>";
@@ -460,6 +465,7 @@
 				2C0528752E2CFA90001BC29D /* ChatRoomRequest.swift */,
 				2C05287D2E2CFE17001BC29D /* SendChatRequest.swift */,
 				2C0528F22E2D6436001BC29D /* ChatMessageRequest.swift */,
+				2CD3745D2E36BA8D005A3EF8 /* SendFileRequest.swift */,
 			);
 			path = Request;
 			sourceTree = "<group>";
@@ -1082,6 +1088,7 @@
 				2C929A792DF3325900DF74BA /* StoreDetail.swift in Sources */,
 				2C9299B12DEC415200DF74BA /* StoreDetailView.swift in Sources */,
 				2C01AF002DDF46EC00BA56CC /* SearchTextField.swift in Sources */,
+				2CD3745E2E36BA8D005A3EF8 /* SendFileRequest.swift in Sources */,
 				2C01AC612DDC9CAB00BA56CC /* MainView.swift in Sources */,
 				2C929AA02DF9ED6F00DF74BA /* UserInfo.swift in Sources */,
 				2C9299062DE341D300DF74BA /* Coordinator.swift in Sources */,
@@ -1103,6 +1110,7 @@
 				2C929A992DF8B5E200DF74BA /* PostRouter.swift in Sources */,
 				2CFF47822DD373BD005D782A /* APIRequestInterceptor.swift in Sources */,
 				2C0528F52E2D652D001BC29D /* ChatParam.swift in Sources */,
+				2CD374602E36C2B4005A3EF8 /* DocumentPicker.swift in Sources */,
 				2C992A502DD2235A0014184B /* SignUpInfoView.swift in Sources */,
 				2C1E8FCE2DD9B510005DA7B5 /* DeviceToken.swift in Sources */,
 				2C01ADC32DDEF03100BA56CC /* StoreDetailResponse.swift in Sources */,

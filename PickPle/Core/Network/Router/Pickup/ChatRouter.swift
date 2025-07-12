@@ -13,6 +13,7 @@ enum ChatRouter {
     case chatRoomList
     case sendChat(roomId: String, request: SendChatRequest)
     case chatMessage(roomId: String, request: ChatMessageRequest)
+    case sendFile(roomId: String, request: SendFileRequest)
 }
 
 extension ChatRouter: TargetType {
@@ -31,12 +32,14 @@ extension ChatRouter: TargetType {
             return "/v1/chats/\(roomId)"
         case .chatMessage(let roomId, _):
             return "/v1/chats/\(roomId)"
+        case .sendFile(let roomId, _):
+            return "v1/chats/\(roomId)"
         }
     }
     
     var method: HTTPMethod {
         switch self {
-        case .chatRoom, .sendChat:
+        case .chatRoom, .sendChat, .sendFile:
             return .post
         case .chatRoomList, .chatMessage:
             return .get
@@ -53,11 +56,15 @@ extension ChatRouter: TargetType {
             return .body(request)
         case .chatMessage(_, let request):
             return .query(request)
+        case .sendFile(_, let request):
+            return .body(request)
         }
     }
     
     var headers: HTTPHeaders? {
         switch self {
+        case .sendFile:
+            return ["Content-Type": "multipart/form-data"]
         default:
             return nil
         }
