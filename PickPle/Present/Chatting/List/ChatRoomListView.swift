@@ -56,7 +56,7 @@ struct ChatRoomRow: View {
         HStack(spacing: 12) {
             // 프로필 이미지
             if let profileImage = chatRoom.profileImage {
-                CachedAsyncImage(path: profileImage, width: 56, height: 56)
+                CachedImageView(imagePath: profileImage, size: CGSize(width: 56, height: 56))
                     .clipShape (
                         Circle()
                     )

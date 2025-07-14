@@ -1,5 +1,5 @@
 //
-//  CachedAsyncImage.swift
+//  CachedImageView.swift
 //  PickPle
 //
 //  Created by 정인선 on 5/23/25.
@@ -7,37 +7,32 @@
 
 import SwiftUI
 
-// MARK: - Custom Async Image View
-struct CachedAsyncImage: View {
-    let path: String
-    let width: CGFloat
-    let height: CGFloat
+struct CachedImageView: View {
+    let imagePath: String
+    let size: CGSize
     
     @StateObject private var imageLoader = ImageLoader()
     
-    init(path: String, width: CGFloat, height: CGFloat) {
-        self.path = path
-        self.width = width
-        self.height = height
-    }
-    
     var body: some View {
         Group {
-            if imageLoader.isLoading {
-                ProgressView()
-            } else if let uiImage = imageLoader.image {
-                Image(uiImage: uiImage)
+            if let image = imageLoader.image {
+                Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+            } else if imageLoader.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ErrorView()
             }
         }
-        .frame(width: width, height: height)
+        .frame(width: size.width, height: size.height)
         .clipped()
-        .onAppear {
-            Task {
-                await imageLoader.loadImage(from: path, size: CGSize(width: width, height: height))
+        .task {
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask(priority: .userInitiated) {
+                    await imageLoader.loadImage(from: imagePath, size: size)
+                }
             }
         }
     }

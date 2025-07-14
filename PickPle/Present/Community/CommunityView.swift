@@ -336,7 +336,7 @@ struct CommunityPostView: View {
                 .foregroundStyle(.gray60)
             
             HStack(spacing: 0) {
-                CachedAsyncImage(path: post.storeImageUrl ?? "", width: 60, height: 60)
+                CachedImageView(imagePath: post.storeImageUrl ?? "", size: CGSize(width: 60, height: 60))
                 Rectangle()
                     .frame(width: 1)
                     .frame(maxHeight: .infinity)

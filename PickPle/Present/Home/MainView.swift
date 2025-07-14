@@ -322,7 +322,7 @@ private struct PopularStoreView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            CachedAsyncImage(path: store.mainImageUrl, width: 240, height: 176)
+            CachedImageView(imagePath: store.mainImageUrl, size: CGSize(width: 240, height: 176))
                 .clipShape(TopLeftInverseCurveRectangle(cornerRadius: 16))
                 .overlay(alignment: .topLeading) {
                     Image(store.isPick ? "like.fill" : "like")

@@ -137,7 +137,7 @@ struct StoreDetailView: View {
                 ZStack(alignment: .bottom) {
                     TabView(selection: $currentPage) {
                         ForEach(viewModel.output.storeDetailData.storeImageUrls.indices, id: \.self) { index in
-                            CachedAsyncImage(path: viewModel.output.storeDetailData.storeImageUrls[index], width: screenWidth, height: tabViewHeight + topSafeArea)
+                            CachedImageView(imagePath: viewModel.output.storeDetailData.storeImageUrls[index], size: CGSize(width: screenWidth, height: tabViewHeight + topSafeArea))
                                 .tag(index)
                         }
                     }
@@ -428,7 +428,7 @@ struct MenuItemView: View {
                 Spacer()
                 ZStack {
                     if let imageUrl = menuItem.menuImageUrl {
-                        CachedAsyncImage(path: imageUrl, width: 100, height: 100)
+                        CachedImageView(imagePath: imageUrl, size: CGSize(width: 100, height: 100))
                             .cornerRadius(8)
                     } else {
                         Rectangle()

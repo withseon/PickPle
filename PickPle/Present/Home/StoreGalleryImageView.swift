@@ -50,7 +50,7 @@ struct StoreGalleryImageView: View {
         let isPickchelin: Bool
         
         var body: some View {
-            CachedAsyncImage(path: urls[0], width: geometry.size.width, height: geometry.size.height)
+            CachedImageView(imagePath: urls[0], size: CGSize(width: geometry.size.width, height: geometry.size.height))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .topTrailing) {
                     PickChelinTagView()
@@ -68,7 +68,7 @@ struct StoreGalleryImageView: View {
         var body: some View {
             let width = geometry.size.width - 4
             return HStack(spacing: 4) {
-                CachedAsyncImage(path: urls[0],width: width * 0.65, height: geometry.size.height)
+                CachedImageView(imagePath: urls[0], size: CGSize(width: width * 0.65, height: geometry.size.height))
                     .clipShape(
                         .rect(
                             topLeadingRadius: 12,
@@ -83,7 +83,7 @@ struct StoreGalleryImageView: View {
                                 .padding(8)
                         }
                     }
-                CachedAsyncImage(path: urls[1], width: width * 0.35, height: geometry.size.height)
+                CachedImageView(imagePath: urls[1], size: CGSize(width: width * 0.35, height: geometry.size.height))
                     .clipShape(
                         .rect(
                             topLeadingRadius: 4,
@@ -107,7 +107,7 @@ struct StoreGalleryImageView: View {
             let rightHeight = (geometry.size.height - 4) / 2
             
             HStack(spacing: 4) {
-                CachedAsyncImage(path: urls[0], width: width * 0.65, height: geometry.size.height)
+                CachedImageView(imagePath: urls[0], size: CGSize(width: width * 0.65, height: geometry.size.height))
                     .clipShape(
                         .rect(
                             topLeadingRadius: 12,
@@ -124,7 +124,7 @@ struct StoreGalleryImageView: View {
                     }
                 
                 VStack(spacing: 4) {
-                    CachedAsyncImage(path: urls[1], width: width * 0.35, height: rightHeight)
+                    CachedImageView(imagePath: urls[1], size: CGSize(width: width * 0.35, height: rightHeight))
                         .clipShape(
                             .rect(
                                 topLeadingRadius: 4,
@@ -133,7 +133,8 @@ struct StoreGalleryImageView: View {
                                 topTrailingRadius: 12
                             )
                         )
-                    CachedAsyncImage(path: urls[2], width: width * 0.35, height: rightHeight)
+
+                    CachedImageView(imagePath: urls[2], size: CGSize(width: width * 0.35, height: rightHeight))
                         .clipShape(
                             .rect(
                                 topLeadingRadius: 4,

@@ -98,11 +98,7 @@ struct PostsGridView: View {
                 ForEach(viewModel.output.posts, id: \.postId) { post in
                     GeometryReader { geometry in
                         if let postImage = post.mainImageUrl {
-                            CachedAsyncImage(
-                                path: postImage,
-                                width: geometry.size.width,
-                                height: geometry.size.width
-                            )
+                            CachedImageView(imagePath: postImage, size: CGSize(width: geometry.size.width, height: geometry.size.width))
                         } else {
                             Rectangle()
                         }
@@ -172,7 +168,7 @@ struct ProfileInfoHeaderView: View {
                                 Circle()
                             )
                     } else {
-                        CachedAsyncImage(path: viewModel.output.profileImage, width: 136, height: 136)
+                        CachedImageView(imagePath: viewModel.output.profileImage, size: CGSize(width: 136, height: 136))
                             .clipShape (
                                 Circle()
                             )
