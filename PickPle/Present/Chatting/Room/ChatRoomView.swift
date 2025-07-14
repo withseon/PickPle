@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 // 메인 채팅뷰
 struct ChatRoomView: View {
@@ -14,6 +15,9 @@ struct ChatRoomView: View {
     @State private var scrollTarget: Int = 0
     @State private var showFileOptions = false
     @State private var keyboardHeight: CGFloat = 0
+    @State private var selectedPhotoItems: [PhotosPickerItem] = []
+    @State private var selectedImages: [UIImage] = []
+    @State private var showDocumentPicker = false
     @FocusState private var isTextFieldFocused: Bool
     
     var nick: String
@@ -75,13 +79,18 @@ struct ChatRoomView: View {
             // 파일 옵션 뷰 (MessageInputBar 아래)
             if showFileOptions {
                 FileOptionsView(
+                    selectedPhotoItems: $selectedPhotoItems,
+                    showDocumentPicker: $showDocumentPicker,
                     onImageTap: {
                         print("앨범 선택")
-                        dismissFileOptions()
                     },
                     onCameraTap: {
                         print("카메라 촬영")
                         dismissFileOptions()
+                    },
+                    onFileTap: {
+                        print("파일 선택")
+                        showDocumentPicker = true
                     }
                 )
                 .frame(height: max(keyboardHeight, 200))
@@ -106,6 +115,86 @@ struct ChatRoomView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             keyboardHeight = 0
         }
+        .onChange(of: selectedPhotoItems) { newItems in
+            Task {
+                selectedImages.removeAll()
+                
+                for item in newItems {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        selectedImages.append(image)
+                    }
+                }
+                
+                if !selectedImages.isEmpty {
+                    dismissFileOptions()
+                    handleSelectedImages(selectedImages)
+                }
+            }
+        }
+        .sheet(isPresented: $showDocumentPicker) {
+            DocumentPicker(
+                allowedContentTypes: [
+                    .pdf,
+                    .jpeg,
+                    .png,
+                    UTType(filenameExtension: "jpg") ?? .jpeg,
+                    UTType(filenameExtension: "gif") ?? .gif
+                ],
+                onDocumentPicked: { url in
+                    handleDocumentPicked(url)
+                    dismissFileOptions()
+                }
+            )
+        }
+    }
+    
+    private func handleSelectedImages(_ images: [UIImage]) {
+        // TODO: 이미지 선택 후 처리
+        for image in images {
+            print("선택된 이미지 크기: \(image.size)")
+        }
+        
+        selectedPhotoItems.removeAll()
+        selectedImages.removeAll()
+    }
+    
+    private func handleDocumentPicked(_ url: URL) {
+        guard url.startAccessingSecurityScopedResource() else { return }
+        defer { url.stopAccessingSecurityScopedResource() }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let fileName = url.lastPathComponent
+            let fileExtension = url.pathExtension.lowercased()
+            
+            print("선택된 파일: \(fileName)")
+            print("파일 크기: \(data.count) bytes")
+            print("파일 확장자: \(fileExtension)")
+            
+            // 파일 형식에 따른 처리
+            switch fileExtension {
+            case "pdf":
+                handlePDFFile(data, fileName: fileName)
+            case "jpg", "jpeg", "png", "gif":
+                if let image = UIImage(data: data) {
+                    handleSelectedImages([image])
+                }
+            default:
+                print("지원하지 않는 파일 형식입니다.")
+            }
+            
+        } catch {
+            print("파일 읽기 오류: \(error)")
+        }
+    }
+    
+    private func handlePDFFile(_ data: Data, fileName: String) {
+        print("PDF 파일: \(fileName)")
+        print("PDF 파일 크기: \(data.count) bytes")
+        // TODO: 파일 선택 후 처리
+        
+        selectedPhotoItems.removeAll()
     }
     
     private func handlePlusButtonTap() {
@@ -176,24 +265,38 @@ struct ChatRoomView: View {
 
 // 파일 옵션 뷰
 struct FileOptionsView: View {
+    @Binding var selectedPhotoItems: [PhotosPickerItem]
+    @Binding var showDocumentPicker: Bool
     let onImageTap: () -> Void
     let onCameraTap: () -> Void
+    let onFileTap: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
             Divider()
             Spacer()
-            HStack(spacing: 40) {
-                FileOptionButton(
-                    icon: "photo",
-                    title: "사진",
-                    action: onImageTap
-                )
+            HStack(spacing: 30) {
+                PhotosPicker(
+                    selection: $selectedPhotoItems,
+                    maxSelectionCount: 5,
+                    matching: .images
+                ) {
+                    FileOptionButton(
+                        icon: "photo",
+                        title: "사진"
+                    )
+                }
                 
                 FileOptionButton(
                     icon: "camera",
                     title: "카메라",
                     action: onCameraTap
+                )
+                
+                FileOptionButton(
+                    icon: "doc",
+                    title: "파일",
+                    action: onFileTap
                 )
             }
             
@@ -207,23 +310,32 @@ struct FileOptionsView: View {
 struct FileOptionButton: View {
     let icon: String
     let title: String
-    let action: () -> Void
+    var action: (() -> Void)? = nil
     
     var body: some View {
         VStack(spacing: 8) {
-            Button(action: action) {
-                Image(systemName: icon)
-                    .frame(width: 50, height: 50)
-                    .foregroundColor(.blackSprout)
-                    .background(.gray0)
-                    .clipShape(Circle())
-                    .shadow(color: .gray100.opacity(0.1), radius: 2, x: 0, y: 1)
+            if let action {
+                buttonContent
+                    .wrapToButton {
+                        action()
+                    }
+            } else {
+                buttonContent
             }
             
             Text(title)
                 .font(.pretendard(.caption1))
                 .foregroundColor(.gray100)
         }
+    }
+    
+    private var buttonContent: some View {
+        Image(systemName: icon)
+            .frame(width: 50, height: 50)
+            .foregroundColor(.blackSprout)
+            .background(.gray0)
+            .clipShape(Circle())
+            .shadow(color: .gray100.opacity(0.1), radius: 2, x: 0, y: 1)
     }
 }
 
