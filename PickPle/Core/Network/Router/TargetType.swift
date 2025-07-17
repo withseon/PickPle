@@ -11,6 +11,7 @@ import Alamofire
 enum RequestParams {
     case query(_ param: RequestableType?)
     case body(_ param: RequestableType?)
+    case multipart
 }
 
 protocol TargetType: URLRequestConvertible {
@@ -42,6 +43,8 @@ extension TargetType {
         case .body(let request):
             let params = request?.toParameter ?? [:]
             urlRequest.httpBody = try JSONSerialization.data(withJSONObject: params, options: [])
+        case .multipart:
+            break
         case .none:
             break
         }
