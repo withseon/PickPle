@@ -8,8 +8,6 @@
 import Foundation
 
 final class DIContainer: ObservableObject {
-    @Published var locationManager: LocationManager
-    
     private let networkManager: NetworkManager
     
     let userRepository: UserRepository
@@ -17,14 +15,30 @@ final class DIContainer: ObservableObject {
     let postRepository: PostRepository
     let chatRepository: ChatRepository
     let realmRepository: RealmRepository
+    let bannerRepository: BannerRepository
+    let orderRepository: OrderRepository
+    let paymentRepository: PaymentRepository
     
+    let cartManager: CartManager
+    let paymentManager: PaymentManager
+
     init() {
-        self.locationManager = LocationManager()
         self.networkManager = NetworkManager()
         self.userRepository = DefaultUserRepository(networkManager: networkManager)
         self.storeRepository = DefaultStoreRepository(networkManager: networkManager)
         self.postRepository = DefaultPostRepository(networkManager: networkManager)
         self.chatRepository = DefaultChatRepository(networkManager: networkManager)
         self.realmRepository = DefaultRealmRepository()
+        self.bannerRepository = DefaultBannerRepository(networkManager: networkManager)
+        self.orderRepository = DefaultOrderRepository(networkManager: networkManager)
+        self.paymentRepository = DefaultPaymentRepository(networkManager: networkManager)
+
+        self.cartManager = CartManager()
+        self.paymentManager = PaymentManager(
+            orderRepository: orderRepository,
+            paymentRepository: paymentRepository,
+            storeRepository: storeRepository,
+            cartManager: cartManager
+        )
     }
 }

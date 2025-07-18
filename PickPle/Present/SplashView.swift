@@ -9,7 +9,16 @@ import SwiftUI
 
 struct SplashView: View {
     var body: some View {
-        Text("SplashView")
+        VStack {
+            Spacer()
+            Image(Resource.appLogoWhite)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 160)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .background(.deepSprout)
     }
 }
 

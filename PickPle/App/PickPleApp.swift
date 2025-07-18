@@ -12,6 +12,7 @@ import KakaoSDKAuth
 @main
 struct PickPleApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @StateObject private var appCoordinator = AppCoordinator()
     @State private var isActive = false
     
     init() {
@@ -21,24 +22,15 @@ struct PickPleApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if isActive {
-                AppCoordinatorView()
-                    .onOpenURL(perform: { url in
-                        if AuthApi.isKakaoTalkLoginUrl(url) {
-                            _ = AuthController.handleOpenUrl(url: url)
-                        }
-                    })
-            } else {
-                SplashView()
-                    .task {
-                        do {
-                            try await Task.sleep(nanoseconds: 2_000_000_000)
-                            isActive = true
-                        } catch {
-                            isActive = true
-                        }
+            AppCoordinatorView(coordinator: appCoordinator)
+                .onOpenURL(perform: { url in
+                    if AuthApi.isKakaoTalkLoginUrl(url) {
+                        _ = AuthController.handleOpenUrl(url: url)
                     }
-            }
+                })
+                .onAppear {
+                    delegate.appCoordinator = appCoordinator
+                }
         }
     }
 }
