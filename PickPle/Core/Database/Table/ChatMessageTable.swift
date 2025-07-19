@@ -63,12 +63,19 @@ extension ChatMessageTable {
             chatId: chatId,
             roomId: roomId,
             content: content,
-            createdAt: FormatHelper.shared.getChatTime(from: createdAt),
+            createdAt: FormatHelper.shared.getChatTime(from: createdAtUTC),
             updatedAt: "",
             sender: UserInfo(
                 userId: senderID,
                 nickname: senderNick,
                 profileImage: nil),
-            files: files)
+            files: files,
+            createdAtUTC: createdAt // 원본 UTC 시간 저장
+        )
+    }
+    
+    // 원본 UTC 시간을 반환하는 computed property
+    var createdAtUTC: String {
+        return createdAt
     }
 }
