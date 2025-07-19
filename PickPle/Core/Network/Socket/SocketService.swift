@@ -8,12 +8,7 @@
 import SwiftUI
 import SocketIO
 
-protocol SocketService: ObservableObject {
-    func connect(_ roomId: String)
-    func disconnect()
-}
-
-final class DefaultSocketService: SocketService {
+final class SocketService: ObservableObject {
     private var socket: SocketIOClient?
     private var manager: SocketManager?
     private var accessToken = ""
@@ -21,9 +16,10 @@ final class DefaultSocketService: SocketService {
     @Published var messages = [ChatResponse]()
     @Published var isConnected = false
     var onMessageReceived: ((ChatResponse) -> Void)?
+    var onSocketConnected: (() -> Void)?
     
     func connect(_ roomId: String) {
-        disconnect()
+        guard !isConnected else { return }
         
         SecureTokenManager.shared.retrieveAndDecryptToken(forKey: SecureKey.ACCESS_TOKEN) { [weak self] result in
             guard let self else { return }
@@ -38,6 +34,7 @@ final class DefaultSocketService: SocketService {
     }
     
     private func setupSocketConnection(_ roomId: String) {
+        
         let socketURL = "\(APIURL.SOCKET)\(roomId)"
         guard let url = URL(string: socketURL) else {
             print("❌ DefaultSocketService: 잘못된 소켓 URL - \(socketURL)")
@@ -70,24 +67,28 @@ final class DefaultSocketService: SocketService {
         // 연결 성공
         socket.on(clientEvent: .connect) { [weak self] data, ack in
             print("🟢 DefaultSocketService: Socket connected")
-            DispatchQueue.main.async {
-                self?.isConnected = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                isConnected = true
+                onSocketConnected?()
             }
         }
         
         // 연결 해제
         socket.on(clientEvent: .disconnect) { [weak self] data, ack in
             print("🔴 DefaultSocketService: Socket disconnected")
-            DispatchQueue.main.async {
-                self?.isConnected = false
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                isConnected = false
             }
         }
         
         // 연결 에러
         socket.on(clientEvent: .error) { [weak self] data, ack in
             print("❌ DefaultSocketService: Connection error - \(data)")
-            DispatchQueue.main.async {
-                self?.isConnected = false
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                isConnected = false
             }
         }
         
@@ -96,7 +97,8 @@ final class DefaultSocketService: SocketService {
             print("🔄 DefaultSocketService: Reconnecting...")
         }
 
-        socket.on("chat") { dataArray, ack in
+        socket.on("chat") { [weak self] dataArray, ack in
+            guard let self else { return }
             guard let data = dataArray.first else {
                 print("❌ DefaultSocketService: dataArray가 비어 있음")
                 return
@@ -127,8 +129,7 @@ final class DefaultSocketService: SocketService {
                             messages.append(chatResponse)
                         }
                     }
-                    
-                    self.onMessageReceived?(chatResponse)
+                    onMessageReceived?(chatResponse)
                 }
             } catch {
                 print("❌ DefaultSocketService: JSON 파싱 실패: \(error)")
@@ -141,9 +142,13 @@ final class DefaultSocketService: SocketService {
         socket = nil
         manager = nil
         
-        DispatchQueue.main.async {
-            self.messages = []
-            self.isConnected = false
+        onMessageReceived = nil
+        onSocketConnected = nil
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            messages = []
+            isConnected = false
         }
     }
     
