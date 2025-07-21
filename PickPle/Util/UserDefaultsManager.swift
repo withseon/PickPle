@@ -10,16 +10,72 @@ import Foundation
 struct UserDefaultsManager {
     private enum Key: String {
         case userId
+        case userProfile
         case selectedLocation
+        case hasRunBefore
     }
     
     @UserDefaultStringWrapper(key: Key.userId.rawValue, defaultValue: nil)
     static var userId: String?
     
+    @UserDefaultWrapper(key: Key.userProfile.rawValue, defaultValue: nil)
+    static var userProfile: UserProfile?
+    
     @UserDefaultWrapper(key: Key.selectedLocation.rawValue, defaultValue: nil)
     static var selectedLocation: Location?
+    
+    @UserDefaultBoolWrapper(key: Key.hasRunBefore.rawValue, defaultValue: false)
+    static var hasRunBefore: Bool
+    
+    // MARK: - App Initialization
+    static func resetKeychainIfNeeded() {
+        if !hasRunBefore {
+            // ✅ 앱이 처음 실행된 경우 (설치 후 최초 실행)
+            print("🆕 앱 최초 설치 감지 - 키체인 토큰 삭제 중...")
+            clearKeychainTokens()
+            hasRunBefore = true
+        } else {
+            print("✅ 기존 사용자 - 키체인 토큰 유지")
+        }
+    }
+    
+    private static func clearKeychainTokens() {
+        // 백그라운드에서 비동기로 실행 (앱 초기화를 블록하지 않음)
+        DispatchQueue.global(qos: .background).async {
+            let group = DispatchGroup()
+            
+            // Access Token 삭제
+            group.enter()
+            SecureTokenManager.shared.deleteToken(forKey: SecureKey.ACCESS_TOKEN) { result in
+                switch result {
+                case .success:
+                    print("✅ Access Token 삭제 완료")
+                case .failure(let error):
+                    print("❌ Access Token 삭제 실패: \(error)")
+                }
+                group.leave()
+            }
+            
+            // Refresh Token 삭제
+            group.enter()
+            SecureTokenManager.shared.deleteToken(forKey: SecureKey.REFRESH_TOKEN) { result in
+                switch result {
+                case .success:
+                    print("✅ Refresh Token 삭제 완료")
+                case .failure(let error):
+                    print("❌ Refresh Token 삭제 실패: \(error)")
+                }
+                group.leave()
+            }
+            
+            // 백그라운드에서 완료 대기
+            group.wait()
+            print("✅ 키체인 토큰 초기화 완료")
+        }
+    }
 }
 
+// MARK: - Property Wrappers
 @propertyWrapper
 struct UserDefaultStringWrapper {
     let key: String
@@ -73,6 +129,30 @@ struct UserDefaultWrapper<T: Codable> {
             } else {
                 UserDefaults.standard.removeObject(forKey: key)
             }
+        }
+    }
+}
+
+@propertyWrapper
+struct UserDefaultBoolWrapper {
+    let key: String
+    let defaultValue: Bool
+    
+    init(key: String, defaultValue: Bool) {
+        self.key = key
+        self.defaultValue = defaultValue
+    }
+    
+    var wrappedValue: Bool {
+        get {
+            // Bool의 경우 기본값을 확인하는 방법이 다름
+            if UserDefaults.standard.object(forKey: key) == nil {
+                return defaultValue
+            }
+            return UserDefaults.standard.bool(forKey: key)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: key)
         }
     }
 }
