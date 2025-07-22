@@ -10,11 +10,11 @@ import Foundation
 struct PostListParam {
     var category: StoreCategory?
     var distance: Int
-    var limit: Int?
+    var limit: Int
     var next: String?
     var orderBy: PostOrder?
     
     static var empty: Self {
-        return .init(distance: 500)
+        return .init(distance: 500, limit: 5)
     }
 }
