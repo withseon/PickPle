@@ -8,6 +8,7 @@
 import Foundation
 
 enum Resource {
-    static let appName = "PickPle"
-    static let appLogo = "sesac"
+    static let appName = "PICKPLE"
+    static let appLogo = "pickple.logo"
+    static let appLogoWhite = "pickple.logo.white"
 }
