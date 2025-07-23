@@ -18,7 +18,7 @@ private struct ClearableModifier: ViewModifier {
                     self.text = ""
                 }) {
                     Image(systemName: "multiply.circle.fill")
-                        .foregroundColor(.gray45)
+                        .foregroundStyle(.gray45)
                 }
                 .transition(.scale)
                 .animation(.default, value: text)
