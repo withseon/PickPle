@@ -11,7 +11,7 @@ enum PostOrder: String, CaseIterable {
     case createdAt, likes
 }
 
-extension PostOrder {
+extension PostOrder: SortType {
     var title: String {
         switch self {
         case .createdAt:

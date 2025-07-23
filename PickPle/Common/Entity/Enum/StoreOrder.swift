@@ -7,11 +7,11 @@
 
 import Foundation
 
-enum StoreOrder: String, CaseIterable {
+enum StoreOrder: String, CaseIterable, Hashable {
     case distance, orders, reviews
 }
 
-extension StoreOrder {
+extension StoreOrder: SortType {
     var title: String {
         switch self {
         case .distance:
