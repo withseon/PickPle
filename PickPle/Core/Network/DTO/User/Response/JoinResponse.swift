@@ -14,3 +14,5 @@ struct JoinResponse: Decodable {
     let accessToken: String
     let refreshToken: String
 }
+
+extension JoinResponse: TokenResponse { }
