@@ -1,10 +1,3 @@
-//
-//  SignUpViewModel.swift
-//  PickPle
-//
-//  Created by 정인선 on 5/16/25.
-//
-
 import Foundation
 import Combine
 
@@ -12,15 +5,18 @@ final class SignUpViewModel: BaseViewModel, ViewModelType {
     var input = Input()
     @Published var output = Output()
     var cancellables = Set<AnyCancellable>()
+    
     private var signUpParam = SignUpParam.empty
     private let userRepository: UserRepository
+    private let onSignUpSuccess: (() -> Void)?
     
     enum State {
         case email, password, info
     }
     
-    init(userRepository: UserRepository) {
+    init(userRepository: UserRepository, onSignUpSuccess: (() -> Void)?) {
         self.userRepository = userRepository
+        self.onSignUpSuccess = onSignUpSuccess
         super.init()
         transform()
     }
@@ -104,7 +100,7 @@ extension SignUpViewModel {
             .sink { [weak self] nickname in
                 guard let self else { return }
                 signUpParam.nickname = nickname
-                output.infoDoneButtonDisable = !validateInfo(nickname: signUpParam.nickname, phoneNum: signUpParam.phoneNum)
+                updateInfoValidation()
             }
             .store(in: &cancellables)
         
@@ -112,7 +108,7 @@ extension SignUpViewModel {
             .sink { [weak self] phoneNum in
                 guard let self else { return }
                 signUpParam.phoneNum = phoneNum
-                output.infoDoneButtonDisable = !validateInfo(nickname: signUpParam.nickname, phoneNum: signUpParam.phoneNum)
+                updateInfoValidation()
             }
             .store(in: &cancellables)
         
@@ -126,8 +122,7 @@ extension SignUpViewModel {
             .sink(with: self) { owner, result in
                 switch result {
                 case .success(let success):
-                    // TODO: accessToken, refreshToken 받아서 처리
-                    dump(success)
+                    owner.onSignUpSuccess?()
                 case .failure(let error):
                     print(error)
                 }
@@ -212,36 +207,20 @@ extension SignUpViewModel {
     }
 }
 
-// MARK: - 회원 정보
+// MARK: - 회원 정보 (ValidationHelper 사용)
 extension SignUpViewModel {
-    private func validateInfo(nickname: String, phoneNum: String) -> Bool {
-        return validateNickname(nickname) && validatePhoneNum(phoneNum)
-    }
     
-    private func validateNickname(_ nickname: String) -> Bool {
-        if nickname.isEmpty {
-            output.nicknameErrorMassage = ""
-            return false
-        } else if nickname.isValidNickname() {
-            output.nicknameErrorMassage = ".,?*-@ 한 글자로 구성할 수 없습니다"
-            return false
-        } else {
-            output.nicknameErrorMassage = ""
-            return true
-        }
-    }
-    
-    private func validatePhoneNum(_ phoneNum: String) -> Bool {
-        if phoneNum.isEmpty {
-            output.phoneNumErrorMessage = ""
-            return true
-        }
-        let prefix = phoneNum.prefix(3)
-        let isValid = (prefix == "010" && phoneNum.count == 11) ||
-        (["011", "016", "017", "018", "019"].contains(String(prefix)) && phoneNum.count == 10)
-        output.phoneNumErrorMessage = isValid ? "" : "전화번호를 정확히 입력해주세요"
+    // ✅ ValidationHelper를 사용한 통합 검증
+    private func updateInfoValidation() {
+        let validationResult = ValidationHelper.validateUserInfo(
+            nickname: signUpParam.nickname,
+            phoneNumber: signUpParam.phoneNum
+        )
         
-        return isValid
+        // UI 상태 업데이트
+        output.nicknameErrorMassage = validationResult.nicknameErrorMessage
+        output.phoneNumErrorMessage = validationResult.phoneNumberErrorMessage
+        output.infoDoneButtonDisable = !validationResult.isValid
     }
 }
 

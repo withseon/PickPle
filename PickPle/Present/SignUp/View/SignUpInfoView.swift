@@ -11,6 +11,11 @@ struct SignUpInfoView: View {
     @ObservedObject var viewModel: SignUpViewModel
     @State var nickname = ""
     @State var phoneNum = ""
+    @FocusState private var focusedField: Field?
+
+    enum Field: Hashable {
+        case nickname, phoneNumber
+    }
     
     var body: some View {
         VStack {
@@ -34,6 +39,7 @@ struct SignUpInfoView: View {
                         errorMessage: viewModel.output.nicknameErrorMassage,
                         limit: 15
                     )
+                    .focused($focusedField, equals: .nickname)
                     .onChange(of: nickname) { newValue in
                         viewModel.action(.validateNickname(newValue))
                     }
@@ -62,6 +68,11 @@ struct SignUpInfoView: View {
                 .disabled(viewModel.output.infoDoneButtonDisable)
             }
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            focusedField = nil
+        }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }
 
@@ -70,10 +81,10 @@ private struct PhoneNumberTextField: View {
     @Binding var text: String
     private var strokeColor: Color
     private var errorMessage: String
-    
+
     @State private var fieldText = ""
     @FocusState private var isFocused: Bool
-    
+
     init(
         _ placeholder: String,
         text: Binding<String>,

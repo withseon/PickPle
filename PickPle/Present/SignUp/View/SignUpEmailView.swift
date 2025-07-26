@@ -10,6 +10,7 @@ import SwiftUI
 struct SignUpEmailView: View {
     @ObservedObject var viewModel: SignUpViewModel
     @State var email = ""
+    @FocusState private var isFocused: Bool
     
     var body: some View {
         VStack {
@@ -25,9 +26,10 @@ struct SignUpEmailView: View {
                     EmailTextField(
                         "이메일을 입력해주세요",
                         text: $email,
-                        strokeColor: viewModel.output.emailErrorMessage.isEmpty ? .gray30 : .errorRed, 
+                        strokeColor: viewModel.output.emailErrorMessage.isEmpty ? .gray30 : .errorRed,
                         errorMessage: viewModel.output.emailErrorMessage
                     )
+                    .focused($isFocused)
                     .onChange(of: email) { newValue in
                         viewModel.action(.validateEmail(newValue))
                     }
@@ -43,5 +45,10 @@ struct SignUpEmailView: View {
             }
             .disabled(viewModel.output.emailDoneButtonDisable)
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isFocused = false
+        }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 }

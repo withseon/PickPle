@@ -8,12 +8,33 @@
 import Foundation
 import Alamofire
 
+struct AppleLoginRequest: RequestableType {
+    let idToken: String
+    let deviceToken: String
+    let nick: String
+}
+
+struct UpdateProfileRequest: RequestableType {
+    let nick: String?
+    let phoneNum: String?
+    let profileImage: String?
+}
+
+struct profileImageResponse: Decodable {
+    let profileImage: String
+}
+
 enum UserRouter {
     case validateEmail(_ request: ValidationEmailRequest)
     case joinEmail(_ request: JoinRequest)
     case emailLogin(_ request: EmailLoginRequest)
     case kakaoLogin(_ request: KakaoLoginRequest)
+    case appleLogin(_ request: AppleLoginRequest)
+    case logout
+    case deviceToken(_ request: DeviceTokenRequest)
     case myProfile
+    case updateProfile(_ request: UpdateProfileRequest)
+    case uploadProfileImage
 }
 
 extension UserRouter: TargetType {
@@ -34,8 +55,16 @@ extension UserRouter: TargetType {
             return "/v1/users/login"
         case .kakaoLogin:
             return "/v1/users/login/kakao"
-        case .myProfile:
-            return "v1/users/me/profile"
+        case .appleLogin:
+            return "/v1/users/login/apple"
+        case .logout:
+            return "/v1/users/logout"
+        case .deviceToken:
+            return "/v1/users/deviceToken"
+        case .myProfile, .updateProfile:
+            return "/v1/users/me/profile"
+        case .uploadProfileImage:
+            return "/v1/users/profile/images"
         }
     }
     
@@ -43,8 +72,10 @@ extension UserRouter: TargetType {
         switch self {
         case .myProfile:
             return .get
-        case .validateEmail, .joinEmail, .emailLogin, .kakaoLogin:
+        case .validateEmail, .joinEmail, .emailLogin, .kakaoLogin, .appleLogin, .logout, .uploadProfileImage:
             return .post
+        case .deviceToken, .updateProfile:
+            return .put
         }
     }
     
@@ -58,15 +89,27 @@ extension UserRouter: TargetType {
             return .body(request)
         case .kakaoLogin(let request):
             return .body(request)
+        case .appleLogin(let request):
+            return .body(request)
+        case .logout:
+            return nil
+        case .deviceToken(let request):
+            return .body(request)
         case .myProfile:
+            return nil
+        case .updateProfile(let request):
+            return .body(request)
+        case .uploadProfileImage:
             return nil
         }
     }
     
     var headers: HTTPHeaders? {
         switch self {
-        case .validateEmail, .joinEmail, .emailLogin, .kakaoLogin, .myProfile:
+        case .uploadProfileImage:
             return nil
+        default:
+            return ["Content-Type": "application/json"]
         }
     }
 }

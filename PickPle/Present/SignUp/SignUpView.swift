@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SignUpView: View {
     @StateObject var viewModel: SignUpViewModel
+    
     var body: some View {
         Group {
             switch viewModel.output.state {
