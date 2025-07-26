@@ -2,7 +2,7 @@
 //  UserInfo.swift
 //  PickPle
 //
-//  Created by 정인선 on 6/12/25.
+//  Created by 정인선 on 8/15/25.
 //
 
 import Foundation
