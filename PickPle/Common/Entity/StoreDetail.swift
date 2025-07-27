@@ -20,7 +20,8 @@ struct StoreDetail {
             let category: String
             let name: String
             let description: String
-            let price: String
+            let price: Int
+            let priceText: String
             let isSoldOut: Bool
             let tags: [String]
             let menuImageUrl: String?
@@ -80,4 +81,17 @@ extension StoreDetail {
         categoryList: [],
         createdAt: "",
         updatedAt: "")
+}
+
+extension StoreDetail.CategoryItem.MenuItem {
+    var asDetailMenuItem: DetailMenuItem {
+        DetailMenuItem(
+            menuId: menuId,
+            name: name,
+            description: description,
+            price: price,
+            priceText: priceText,
+            isSoldOut: isSoldOut,
+            menuImageUrl: menuImageUrl)
+    }
 }
