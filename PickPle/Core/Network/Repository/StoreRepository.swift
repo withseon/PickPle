@@ -5,6 +5,7 @@
 //  Created by 정인선 on 5/22/25.
 //
 
+import Foundation
 import Combine
 
 protocol StoreRepository {
