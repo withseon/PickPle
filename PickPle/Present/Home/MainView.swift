@@ -1,10 +1,3 @@
-//
-//  MainView.swift
-//  PickPle
-//
-//  Created by 정인선 on 5/20/25.
-//
-
 import SwiftUI
 
 enum PickFilter: CaseIterable {
@@ -24,21 +17,24 @@ struct MainView: View {
     @StateObject var viewModel: MainViewModel
     
     var body: some View {
-        if let _ = UserDefaultsManager.selectedLocation {
-            MainContentView(viewModel: viewModel)
-                .task {
-                    viewModel.action(.onAppear)
-                }
-                .onDisappear {
-                    viewModel.action(.onDisappear)
-                }
-        } else {
-            InitialLocationSettingView()
-        }
+        MainContentView(viewModel: viewModel)
+            .onAppear {
+                viewModel.action(.onAppear)
+                viewModel.action(.onViewWillAppear)
+            }
+            .onDisappear {
+                viewModel.action(.onDisappear)
+            }
+            .refreshable {
+                viewModel.action(.refresh)
+            }
+            .handleErrors(viewModel: viewModel)
     }
 }
 
+// MainContentView의 배경 수정
 private struct MainContentView: View {
+    @EnvironmentObject var homeCoordinator: HomeCoordinator
     @ObservedObject var viewModel: MainViewModel
     @State var searchText = ""
     
@@ -46,41 +42,14 @@ private struct MainContentView: View {
         VStack(spacing: 8) {
             LocationAndSearchView(viewModel: viewModel)
             StoreListView(viewModel: viewModel)
-            .refreshable {
-                print("새로고침")
-            }
         }
-        .background(.brightSprout)
-        .sheet(isPresented: $viewModel.output.showMapSheet) {
-            MapView(locationManager: viewModel.locationManager) {
-                viewModel.action(.selectedLocation)
-            }
-        }
-        .sheet(isPresented: $viewModel.output.showOrderSheet) {
-            VStack(alignment: .center) {
-                ForEach(StoreOrder.allCases, id: \.self) { item in
-                    Text(item.title)
-                        .font(.pretendard(.body1))
-                        .padding()
-                        .foregroundStyle(viewModel.output.selectedOrder == item ? .blackSprout : .gray100)
-                        .onTapGesture { _ in
-                            viewModel.action(.selectedOrder(item))
-                        }
-                    if item != StoreOrder.allCases.last {
-                        Rectangle()
-                            .frame(height: 1)
-                            .foregroundStyle(.gray30)
-                            .padding(.horizontal, 20)
-                    }
-                }
-            }
-            .presentationDetents([.fraction(0.3)])
-        }
+        .background(.brightSprout) // 기본 배경은 brightSprout로 설정
     }
 }
 
 // MARK: - 위치 & 검색 뷰
 private struct LocationAndSearchView: View {
+    @EnvironmentObject var homeCoordinator: HomeCoordinator
     @ObservedObject var viewModel: MainViewModel
     @State var searchText = ""
     
@@ -89,7 +58,9 @@ private struct LocationAndSearchView: View {
             HStack {
                 LocationButton(address: viewModel.output.address)
                     .wrapToButton {
-                        viewModel.action(.mapSheet)
+                        homeCoordinator.presentSheet(.map {
+                            viewModel.action(.selectedLocation)
+                        })
                     }
                     .buttonStyle(.plain)
                 Spacer()
@@ -136,7 +107,6 @@ private struct LocationAndSearchView: View {
                 .foregroundStyle(.deepSprout)
                 Text(viewModel.output.searchPopular)
                     .animation(.easeInOut(duration: 0.5), value: viewModel.output.searchPopular)
-
                     .font(.pretendard(.caption1))
                     .foregroundStyle(.blackSprout)
                 Spacer()
@@ -148,52 +118,58 @@ private struct LocationAndSearchView: View {
 // MARK: - 가게 리스트 뷰
 private struct StoreListView: View {
     @ObservedObject var viewModel: MainViewModel
-
     var body: some View {
-        List {
-            Section {
-                ForEach(viewModel.output.storeSummaries, id: \.storeId) { store in
-                    ZStack {
-                        NavigationLink(value: HomeRoute.storeDetail(store.storeId)) {
-                            EmptyView()
-                        }
-                        .opacity(0)
+        ZStack {
+            // 배경을 반으로 나누는 뷰
+            SplitBackgroundView(topColor: .brightSprout, bottomColor: .gray0)
+            
+            List {
+                Section {
+                    ForEach(viewModel.output.storeSummaries, id: \.storeId) { store in
+                        ZStack {
+                            NavigationLink(value: HomeRoute.storeDetail(store.storeId)) {
+                                EmptyView()
+                            }
+                            .opacity(0)
 
-                        VStack(spacing: 0) {
-                            StoreView(viewModel: viewModel, store: store)
-                                .padding(20)
-                                .background(.gray15)
-                                .contentShape(Rectangle())
-                                .onAppear {
-                                    if !viewModel.output.storeSummaries.isEmpty,
-                                       store == viewModel.output.storeSummaries.last {
-                                        viewModel.action(.pagination)
+                            VStack(spacing: 0) {
+                                StoreView(viewModel: viewModel, store: store)
+                                    .padding(20)
+                                    .background(.clear) // 투명하게 설정
+                                    .contentShape(Rectangle())
+                                    .onAppear {
+                                        if !viewModel.output.storeSummaries.isEmpty,
+                                           store == viewModel.output.storeSummaries.last {
+                                            viewModel.action(.pagination)
+                                        }
                                     }
-                                }
 
-                            if store != viewModel.output.storeSummaries.last {
-                                Rectangle()
-                                    .frame(height: 1)
-                                    .foregroundStyle(.gray30)
-                                    .padding(.horizontal, 20)
+                                if store != viewModel.output.storeSummaries.last {
+                                    Rectangle()
+                                        .frame(height: 1)
+                                        .foregroundStyle(.gray30)
+                                        .padding(.horizontal, 20)
+                                }
                             }
                         }
+                        .background(.clear) // 투명하게 설정
                     }
-                    .background(.gray15)
+                } header: {
+                    StoreHeaderView(viewModel: viewModel)
                 }
-            } header: {
-                StoreHeaderView(viewModel: viewModel)
+                .listRowInsets(.init())
+                .listRowSeparator(.hidden)
             }
-            .listRowInsets(.init())
-            .listRowSeparator(.hidden)
+            .listStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .background(.clear) // List 배경을 투명하게 설정
         }
-        .listStyle(.grouped)
-        .scrollContentBackground(.hidden)
     }
 }
 
 // MARK: - 헤더 뷰
 private struct StoreHeaderView: View {
+    @EnvironmentObject var homeCoordinator: HomeCoordinator
     @ObservedObject var viewModel: MainViewModel
     
     var body: some View {
@@ -207,14 +183,15 @@ private struct StoreHeaderView: View {
             .padding(.horizontal, 20)
             
             VStack {
+                HStack {
+                    Text("실시간 인기 맛집")
+                        .font(.pretendard(.body2))
+                        .foregroundStyle(.gray90)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                
                 if !viewModel.output.popularStores.isEmpty {
-                    HStack {
-                        Text("실시간 인기 맛집")
-                            .font(.pretendard(.body2))
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    
                     ScrollView(.horizontal) {
                         LazyHStack {
                             ForEach(viewModel.output.popularStores, id: \.storeId) { store in
@@ -226,37 +203,93 @@ private struct StoreHeaderView: View {
                         .padding(.horizontal, 20)
                     }
                     .scrollIndicators(.never)
+                } else {
+                    VStack {
+                        Text("근처 인기 픽업 가게가 없습니다")
+                            .font(.pretendard(.body3))
+                            .foregroundStyle(.gray60)
+                            .padding(.vertical, 20)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 20)
                 }
             }
             
+            if !viewModel.output.bannerItems.isEmpty {
+                BannerView(
+                    items: viewModel.output.bannerItems,
+                    size: CGSize(width: 390, height: 100)
+                ) { url in
+                    viewModel.action(.selectedBanner(url))
+                    homeCoordinator.presentFullScreenSheet(.webView(url: url))
+                }
+            }
+            
+            // 픽업 가게 섹션 - 두 가지 빈 상태 구분
             VStack(spacing: 8) {
                 HStack(alignment: .center) {
                     Text("픽업 가게")
                         .font(.pretendard(.body2))
+                        .foregroundStyle(.gray90)
                     Spacer()
-                    HStack {
-                        Text(viewModel.output.selectedOrder.title)
-                            .font(.pretendard(.caption1))
-                        Image("list")
-                            .iconFrame(16)
-                    }
-                    .foregroundStyle(.blackSprout)
-                    .wrapToButton {
-                        viewModel.action(.orderSheet)
+                    
+                    // 서버 데이터가 있을 때만 정렬 버튼 표시
+                    if viewModel.output.hasServerData {
+                        HStack {
+                            Text(viewModel.output.selectedOrder.title)
+                                .font(.pretendard(.caption1))
+                            Image("list")
+                                .iconFrame(16)
+                        }
+                        .foregroundStyle(.blackSprout)
+                        .wrapToButton {
+                            homeCoordinator.presentSheet(.sort(selectedItem: viewModel.output.selectedOrder, completion: { selectedOrder in
+                                viewModel.action(.selectedOrder(selectedOrder))
+                            }))
+                        }
                     }
                 }
                 
-                HStack(spacing: 12) {
-                    ForEach(PickFilter.allCases, id: \.self) { filter in
-                        PickStoreFilterButton(viewModel: viewModel, filter: filter)
+                // 상태에 따른 조건부 렌더링
+                if !viewModel.output.hasServerData {
+                    // 케이스 1: 서버에서 받은 데이터가 없는 경우
+                    VStack(spacing: 12) {
+                        Text("근처 픽업 가게가 없습니다")
+                            .font(.pretendard(.body3))
+                            .foregroundStyle(.gray60)
+                            .padding(.vertical, 20)
                     }
-                    Spacer()
+                } else if viewModel.output.storeSummaries.isEmpty {
+                    // 케이스 2: 서버 데이터는 있지만 필터링 결과가 없는 경우
+                    VStack(spacing: 12) {
+                        // 필터 버튼들 유지
+                        HStack(spacing: 12) {
+                            ForEach(PickFilter.allCases, id: \.self) { filter in
+                                PickStoreFilterButton(viewModel: viewModel, filter: filter)
+                            }
+                            Spacer()
+                        }
+                        
+                        // 다른 메시지 표시
+                        Text("해당 조건에 맞는 픽업 가게가 없습니다")
+                            .font(.pretendard(.body3))
+                            .foregroundStyle(.gray60)
+                            .padding(.vertical, 12)
+                    }
+                } else {
+                    // 케이스 3: 정상적으로 데이터가 있는 경우
+                    HStack(spacing: 12) {
+                        ForEach(PickFilter.allCases, id: \.self) { filter in
+                            PickStoreFilterButton(viewModel: viewModel, filter: filter)
+                        }
+                        Spacer()
+                    }
                 }
             }
             .padding(.horizontal, 20)
         }
-        .padding(.vertical)
-        .background(.gray15)
+        .padding(.top)
+        .background(.gray0)
         .clipShape(
             UnevenRoundedRectangle(
                 topLeadingRadius: 20,
@@ -265,7 +298,7 @@ private struct StoreHeaderView: View {
         )
     }
     
-    // MARK: - 카데고리 버튼
+    // MARK: - 카테고리 버튼
     private struct CategoryButton: View {
         @ObservedObject var viewModel: MainViewModel
         let category: StoreCategory

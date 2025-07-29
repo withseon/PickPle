@@ -2,8 +2,6 @@
 //  MainViewModel.swift
 //  PickPle
 //
-//  Created by 정인선 on 5/21/25.
-//
 
 import Foundation
 import Combine
@@ -12,60 +10,85 @@ final class MainViewModel: BaseViewModel, ViewModelType {
     var input = Input()
     @Published var output = Output()
     var cancellables = Set<AnyCancellable>()
-    let locationManager = LocationManager()
     
     private let storeRepository: StoreRepository
+    private let bannerRepository: BannerRepository
     private var storeListParam = StoreListParam.empty
     
+    private var hasInitialized = false
+
     private var allPopularStoreData = [PopularStore]()
-    private var allStoreData = [StoreSummary]()
+    private var allStoreData = [StoreSummary]()  // 서버에서 받은 원본 데이터
     private var searchPopularData = [String]()
     private var currentSearchPopular = 0
     private var searchTimerCancellable: AnyCancellable?
-    
     private var isPaginationEnabled = false
 
-    init(storeRepository: StoreRepository) {
+    init(
+        storeRepository: StoreRepository,
+        bannerRepository: BannerRepository
+    ) {
         self.storeRepository = storeRepository
+        self.bannerRepository = bannerRepository
         super.init()
         transform()
     }
-}
 
-// MARK: - Input/Output
-extension MainViewModel {
+    // MARK: - Input/Output
     struct Input {
         let onAppearTrigger = PassthroughSubject<Void, Never>()
+        let onViewWillAppearTrigger = PassthroughSubject<Void, Never>()
         let onDisappearTrigger = PassthroughSubject<Void, Never>()
-        let mapSheetTrigger = PassthroughSubject<Void, Never>()
+        let refreshTrigger = PassthroughSubject<Void, Never>()
         let selectedLocationTrigger = PassthroughSubject<Void, Never>()
         let selectedCategoryTrigger = PassthroughSubject<StoreCategory, Never>()
-        let orderSheetTrigger = PassthroughSubject<Void, Never>()
         let selectedOrderTigger = PassthroughSubject<StoreOrder, Never>()
         let selectedPickFilterTrigger = PassthroughSubject<PickFilter, Never>()
         let likeStoreTrigger = PassthroughSubject<(id: String, isPick: Bool), Never>()
         let dataPagingTrigger = PassthroughSubject<Void, Never>()
+        let selectedBannerTrigger = PassthroughSubject<URL, Never>()
     }
 
     struct Output {
-        var showMapSheet = false
         var address = ""
         var popularStores = [PopularStore]()
-        var storeSummaries = [StoreSummary]()
+        var storeSummaries = [StoreSummary]()  // 필터링된 결과
+        var bannerItems = [BannerItem]()
         var searchPopular = ""
         var selectedCategory: StoreCategory? = nil
-        var showOrderSheet = false
         var selectedOrder: StoreOrder = .distance
         var selectedPickFilters: Set<PickFilter> = []
+        var selectedBannerURL = URL(fileURLWithPath: "")
+        
+        // 새로 추가: 서버 데이터 존재 여부 확인용
+        var hasServerData: Bool = false  // 서버에서 받은 원본 데이터가 있는지
     }
 
     func transform() {
+        NotificationCenter.default
+            .publisher(for: NSNotification.Name("AttendanceCompleted"))
+            .sink(with: self) { owner, notification in
+                print("출석 완료 알림 수신!")
+            }
+            .store(in: &cancellables)
+
+        // 최초 데이터 로딩
         input.onAppearTrigger
             .sink(with: self) { owner, _ in
+                guard !owner.hasInitialized else { return }
+                owner.hasInitialized = true
+                
                 owner.output.address = owner.setAddress()
                 owner.fetchStoreData()
                 owner.fetchPopularStoreData()
                 owner.fetchSearchPopularData()
+                owner.fetchBannerData()
+            }
+            .store(in: &cancellables)
+        
+        input.onViewWillAppearTrigger
+            .sink(with: self) { owner, _ in
+                owner.startSearchTimer()
             }
             .store(in: &cancellables)
         
@@ -75,18 +98,23 @@ extension MainViewModel {
             }
             .store(in: &cancellables)
         
-        input.mapSheetTrigger
+        input.refreshTrigger
             .sink(with: self) { owner, _ in
-                owner.output.showMapSheet = true
+                owner.storeListParam.next = nil
+                owner.fetchStoreData()
+                owner.fetchPopularStoreData()
             }
             .store(in: &cancellables)
-        
+
         input.selectedLocationTrigger
             .sink(with: self) { owner, _ in
                 owner.output.address = owner.setAddress()
                 owner.storeListParam.next = nil
                 owner.fetchStoreData()
                 owner.fetchPopularStoreData()
+                
+                // 위치 변경 알림 전송 (CommunityView가 게시글 목록을 새로고침하도록)
+                NotificationCenter.default.post(name: Notification.Name("LocationChanged"), object: nil)
             }
             .store(in: &cancellables)
         
@@ -106,12 +134,6 @@ extension MainViewModel {
             }
             .store(in: &cancellables)
         
-        input.orderSheetTrigger
-            .sink(with: self) { owner, _ in
-                owner.output.showOrderSheet = true
-            }
-            .store(in: &cancellables)
-        
         input.selectedOrderTigger
             .sink(with: self) { owner, order in
                 if owner.output.selectedOrder != order {
@@ -120,7 +142,6 @@ extension MainViewModel {
                     owner.storeListParam.next = nil
                     owner.fetchStoreData()
                 }
-                owner.output.showOrderSheet = false
             }
             .store(in: &cancellables)
         
@@ -156,6 +177,12 @@ extension MainViewModel {
                 }
             }
             .store(in: &cancellables)
+        
+        input.selectedBannerTrigger
+            .sink(with: self) { owner, url in
+                owner.output.selectedBannerURL = url
+            }
+            .store(in: &cancellables)
     }
     
     private func setAddress() -> String {
@@ -178,12 +205,17 @@ extension MainViewModel {
                     } else {
                         owner.allStoreData = success.data.map { $0.asStoreSummary }
                     }
+                    
+                    // 서버 데이터 존재 여부 업데이트
+                    owner.output.hasServerData = !owner.allStoreData.isEmpty
+                    
                     owner.storeListParam.next = success.nextCursor
                     owner.filterStoreData()
                     if let limit = owner.storeListParam.limit {
                         owner.isPaginationEnabled = success.data.count >= limit
                     }
                 case .failure(let error):
+                    owner.output.hasServerData = false
                     print(error)
                 }
             }
@@ -229,6 +261,21 @@ extension MainViewModel {
                 case .success(let success):
                     owner.searchPopularData = success.data
                     owner.startSearchTimer()
+                case .failure(let error):
+                    print(error)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func fetchBannerData() {
+        let publish = bannerRepository.banner()
+        publish
+            .receive(on: DispatchQueue.main)
+            .sink(with: self) { owner, result in
+                switch result {
+                case .success(let success):
+                    owner.output.bannerItems = success.data.map { $0.asBannerItem }
                 case .failure(let error):
                     print(error)
                 }
@@ -288,57 +335,46 @@ extension MainViewModel {
         
         filterStoreData()
     }
-}
 
-// MARK: - Action
-extension MainViewModel {
+    // MARK: - Action
     enum Action {
         case onAppear
+        case onViewWillAppear
         case onDisappear
-        case mapSheet
+        case refresh
         case selectedLocation
         case selectedCategory(_ category: StoreCategory)
-        case orderSheet
         case selectedOrder(_ order: StoreOrder)
         case selectedPickFilter(_ filter: PickFilter)
         case likeStore(_ id: String, _ isPick: Bool)
         case pagination
+        case selectedBanner(_ url: URL)
     }
-
+    
     func action(_ action: Action) {
         switch action {
         case .onAppear:
-            input.onAppearTrigger
-                .send(())
+            input.onAppearTrigger.send(())
+        case .onViewWillAppear:
+            input.onViewWillAppearTrigger.send(())
         case .onDisappear:
-            input.onDisappearTrigger
-                .send(())
-        case .mapSheet:
-            input.mapSheetTrigger
-                .send(())
+            input.onDisappearTrigger.send(())
+        case .refresh:
+            input.refreshTrigger.send(())
         case .selectedLocation:
-            input.selectedLocationTrigger
-                .send(())
+            input.selectedLocationTrigger.send(())
         case .selectedCategory(let category):
-            input.selectedCategoryTrigger
-                .send(category)
-        case .orderSheet:
-            input.orderSheetTrigger
-                .send(())
+            input.selectedCategoryTrigger.send(category)
         case .selectedOrder(let order):
-            input.selectedOrderTigger
-                .send(order)
+            input.selectedOrderTigger.send(order)
         case .selectedPickFilter(let filter):
-            input.selectedPickFilterTrigger
-                .send(filter)
+            input.selectedPickFilterTrigger.send(filter)
         case .likeStore(let id, let isPick):
-            input.likeStoreTrigger
-                .send((id, isPick))
+            input.likeStoreTrigger.send((id, isPick))
         case .pagination:
-            input.dataPagingTrigger
-                .send(())
+            input.dataPagingTrigger.send(())
+        case .selectedBanner(let url):
+            input.selectedBannerTrigger.send(url)
         }
     }
 }
-
-
