@@ -50,12 +50,16 @@ struct StoreGalleryImageView: View {
         let isPickchelin: Bool
         
         var body: some View {
-            CachedImageView(imagePath: urls[0], size: CGSize(width: geometry.size.width, height: geometry.size.height))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(alignment: .topTrailing) {
-                    PickChelinTagView()
-                        .padding(8)
-                }
+            CachedImageView(
+                imagePath: urls[0], 
+                size: CGSize(width: geometry.size.width, height: geometry.size.height),
+                showVideoOverlay: false
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(alignment: .topTrailing) {
+                PickChelinTagView()
+                    .padding(8)
+            }
         }
     }
     
@@ -68,30 +72,38 @@ struct StoreGalleryImageView: View {
         var body: some View {
             let width = geometry.size.width - 4
             return HStack(spacing: 4) {
-                CachedImageView(imagePath: urls[0], size: CGSize(width: width * 0.65, height: geometry.size.height))
-                    .clipShape(
-                        .rect(
-                            topLeadingRadius: 12,
-                            bottomLeadingRadius: 12,
-                            bottomTrailingRadius: 4,
-                            topTrailingRadius: 4
-                        )
+                CachedImageView(
+                    imagePath: urls[0], 
+                    size: CGSize(width: width * 0.65, height: geometry.size.height),
+                    showVideoOverlay: false
+                )
+                .clipShape(
+                    .rect(
+                        topLeadingRadius: 12,
+                        bottomLeadingRadius: 12,
+                        bottomTrailingRadius: 4,
+                        topTrailingRadius: 4
                     )
-                    .overlay(alignment: .topTrailing) {
-                        if isPickchelin {
-                            PickChelinTagView()
-                                .padding(8)
-                        }
+                )
+                .overlay(alignment: .topTrailing) {
+                    if isPickchelin {
+                        PickChelinTagView()
+                            .padding(8)
                     }
-                CachedImageView(imagePath: urls[1], size: CGSize(width: width * 0.35, height: geometry.size.height))
-                    .clipShape(
-                        .rect(
-                            topLeadingRadius: 4,
-                            bottomLeadingRadius: 4,
-                            bottomTrailingRadius: 12,
-                            topTrailingRadius: 12
-                        )
+                }
+                CachedImageView(
+                    imagePath: urls[1],
+                    size: CGSize(width: width * 0.35, height: geometry.size.height),
+                    showVideoOverlay: false
+                )
+                .clipShape(
+                    .rect(
+                        topLeadingRadius: 4,
+                        bottomLeadingRadius: 4,
+                        bottomTrailingRadius: 12,
+                        topTrailingRadius: 12
                     )
+                )
             }
         }
     }
@@ -107,42 +119,54 @@ struct StoreGalleryImageView: View {
             let rightHeight = (geometry.size.height - 4) / 2
             
             HStack(spacing: 4) {
-                CachedImageView(imagePath: urls[0], size: CGSize(width: width * 0.65, height: geometry.size.height))
+                CachedImageView(
+                    imagePath: urls[0], 
+                    size: CGSize(width: width * 0.65, height: geometry.size.height),
+                    showVideoOverlay: false
+                )
+                .clipShape(
+                    .rect(
+                        topLeadingRadius: 12,
+                        bottomLeadingRadius: 12,
+                        bottomTrailingRadius: 4,
+                        topTrailingRadius: 4
+                    )
+                )
+                .overlay(alignment: .topTrailing) {
+                    if isPickchelin {
+                        PickChelinTagView()
+                            .padding(8)
+                    }
+                }
+                
+                VStack(spacing: 4) {
+                    CachedImageView(
+                        imagePath: urls[1], 
+                        size: CGSize(width: width * 0.35, height: rightHeight),
+                        showVideoOverlay: false
+                    )
                     .clipShape(
                         .rect(
-                            topLeadingRadius: 12,
-                            bottomLeadingRadius: 12,
+                            topLeadingRadius: 4,
+                            bottomLeadingRadius: 4,
                             bottomTrailingRadius: 4,
+                            topTrailingRadius: 12
+                        )
+                    )
+
+                    CachedImageView(
+                        imagePath: urls[2], 
+                        size: CGSize(width: width * 0.35, height: rightHeight),
+                        showVideoOverlay: false
+                    )
+                    .clipShape(
+                        .rect(
+                            topLeadingRadius: 4,
+                            bottomLeadingRadius: 4,
+                            bottomTrailingRadius: 12,
                             topTrailingRadius: 4
                         )
                     )
-                    .overlay(alignment: .topTrailing) {
-                        if isPickchelin {
-                            PickChelinTagView()
-                                .padding(8)
-                        }
-                    }
-                
-                VStack(spacing: 4) {
-                    CachedImageView(imagePath: urls[1], size: CGSize(width: width * 0.35, height: rightHeight))
-                        .clipShape(
-                            .rect(
-                                topLeadingRadius: 4,
-                                bottomLeadingRadius: 4,
-                                bottomTrailingRadius: 4,
-                                topTrailingRadius: 12
-                            )
-                        )
-
-                    CachedImageView(imagePath: urls[2], size: CGSize(width: width * 0.35, height: rightHeight))
-                        .clipShape(
-                            .rect(
-                                topLeadingRadius: 4,
-                                bottomLeadingRadius: 4,
-                                bottomTrailingRadius: 12,
-                                topTrailingRadius: 4
-                            )
-                        )
                 }
             }
         }
@@ -159,10 +183,10 @@ struct StoreGalleryImageView: View {
                     VStack(spacing: 4) {
                         Image(systemName: "photo")
                             .font(.title)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                         Text("이미지 준비중입니다.")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.gray)
                     }
                 )
                 .overlay(alignment: .topTrailing) {
