@@ -69,7 +69,7 @@ extension StoreRouter: TargetType {
     var headers: HTTPHeaders? {
         switch self {
         default:
-            return nil
+            return ["Content-Type": "application/json"]
         }
     }
 }

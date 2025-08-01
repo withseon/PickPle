@@ -18,65 +18,78 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     @Published var place: String = ""
     @Published var showAlert = false
     
+    // 권한 변경 시 콜백을 위한 클로저
+    private var authorizationCallback: ((Bool) -> Void)?
+    
     override init() {
         self.authorizationStatus = locationManager.authorizationStatus
         super.init()
         locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        locationManager.distanceFilter = 10
     }
     
     deinit {
         print("locationManager Deinit")
+        stopLocationUpdates()
+    }
+    
+    // 위치 추적 시작 (맵 사용 시에만)
+    private func startLocationUpdates() {
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = 10
+        locationManager.startUpdatingLocation()
+    }
+    
+    // 위치 추적 중지
+    func stopLocationUpdates() {
         locationManager.stopUpdatingLocation()
     }
     
-    private func checkLocationAuthorization() {
-        switch locationManager.authorizationStatus {
-        case .authorizedWhenInUse, .authorizedAlways:
-            locationManager.startUpdatingLocation()
-        case .denied, .restricted:
-            showAlert = true
-            break
-        case .notDetermined:
-            locationManager.requestWhenInUseAuthorization()
-        @unknown default:
-            break
+    // 위치 권한 요청 (추적은 시작하지 않음)
+    func requestLocationPermission(completion: @escaping (Bool) -> Void) {
+        // 이미 권한이 허용된 경우
+        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
+            completion(true)
+            return
         }
-    }
-    
-    func initialLocationManager() {
-        locationManager.requestWhenInUseAuthorization()
-        checkLocationAuthorization()
-    }
-    
-    func requestLocationAndExecute(completion: @escaping (Bool) -> Void) {
-        initialLocationManager()
         
-        Task {
-            if authorizationStatus == .authorizedWhenInUse ||
-               authorizationStatus == .authorizedAlways {
-                
-                // 위치 정보가 없으면 가져올 때까지 기다림 (최대 2초)
-                var attempts = 0
-                while location == nil && attempts < 20 {
-                    try await Task.sleep(nanoseconds: 100_000_000)
-                    attempts += 1
-                }
-                
-                await MainActor.run {
-                    completion(location != nil)
-                }
-            } else {
-                await MainActor.run {
-                    completion(false)
-                }
-            }
+        // 권한이 거부된 경우
+        if authorizationStatus == .denied || authorizationStatus == .restricted {
+            showAlert = true
+            completion(false)
+            return
         }
+        
+        // 권한이 아직 결정되지 않은 경우 - 콜백 설정 후 권한 요청
+        authorizationCallback = completion
+        locationManager.requestWhenInUseAuthorization()
+    }
+    
+    // 맵 사용 시에만 위치 추적 시작
+    func startLocationForMap() {
+        guard authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways else {
+            return
+        }
+        startLocationUpdates()
     }
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
+        
+        // 권한 요청에 대한 응답 처리 (추적은 시작하지 않음)
+        if let callback = authorizationCallback {
+            switch authorizationStatus {
+            case .authorizedWhenInUse, .authorizedAlways:
+                callback(true)
+            case .denied, .restricted:
+                showAlert = true
+                callback(false)
+            case .notDetermined:
+                return
+            @unknown default:
+                callback(false)
+            }
+            authorizationCallback = nil
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -86,7 +99,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     
     func moveMapToCurrentLocation() {
         if location == nil {
-            locationManager.startUpdatingLocation()
+            startLocationUpdates()
         }
         
         moveToCurrentLocation = true
@@ -97,19 +110,29 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     
     func convertLocationToAddress(location: CLLocation) {
         tempLocation = location
-        let geocoder = CLGeocoder()
-        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
+
+        GeocodingService.shared.convertToAddress(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude
+        ) { [weak self] result in
             guard let self else { return }
-            
-            if error != nil {
-                return
+
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let address):
+                    self.place = address
+                    // tempPlace는 subLocality + name 형태로 저장
+                    let components = address.split(separator: " ")
+                    if components.count >= 2 {
+                        self.tempPlace = components.dropFirst().joined(separator: " ")
+                    } else {
+                        self.tempPlace = address
+                    }
+
+                case .failure:
+                    self.place = "주소를 가져올 수 없습니다"
+                }
             }
-            guard let placemark = placemarks?.first else { return }
-            let locality = placemark.locality ?? ""
-            let subLocality = placemark.subLocality ?? ""
-            let name = placemark.name?.replacingOccurrences(of: subLocality, with: "") ?? ""
-            place = "\(locality) \(subLocality) \(name)"
-            tempPlace = "\(subLocality) \(name)"
         }
     }
     

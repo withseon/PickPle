@@ -63,7 +63,7 @@ struct SecureClearableTextField: View {
                 }
                 
                 Image(systemName: isSecured ? "eye" : "eye.slash")
-                    .foregroundColor(.gray45)
+                    .foregroundStyle(.gray45)
                     .wrapToButton {
                         isSecured.toggle()
                     }

@@ -29,6 +29,9 @@ struct ClearableTextField: View {
         self.strokeColor = strokeColor
         self.errorMessage = errorMessage
         self.limit = limit
+        
+        // ✅ 초기화 시점에 fieldText를 외부 text 값으로 설정
+        _fieldText = State(initialValue: text.wrappedValue)
     }
         
     var body: some View {
@@ -52,6 +55,18 @@ struct ClearableTextField: View {
                         }
                         text = fieldText
                     }
+                    // ✅ 외부 text 값이 변경될 때 fieldText 동기화
+                    .onChange(of: text) { newValue in
+                        if fieldText != newValue {
+                            fieldText = newValue
+                        }
+                    }
+                    // ✅ 뷰가 나타날 때도 동기화 (추가 보장)
+                    .onAppear {
+                        if fieldText != text {
+                            fieldText = text
+                        }
+                    }
             }
             .padding(.horizontal, 12)
             .frame(height: 44)
@@ -71,7 +86,8 @@ struct ClearableTextField: View {
 
 #Preview {
     VStack {
-        ClearableTextField("플레이스홀더", text: .constant(""))
+        ClearableTextField("플레이스홀더", text: .constant("초기값 테스트"))
+        ClearableTextField("빈 값", text: .constant(""))
     }
     .padding()
 }
