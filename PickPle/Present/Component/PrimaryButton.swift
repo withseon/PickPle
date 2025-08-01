@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct PrimaryButton: View {
-    private let title: String
-    private let backgroundColor: Color
-    private let foregroundColor: Color
-    private let action: () -> Void
+    let title: String
+    let backgroundColor: Color
+    let foregroundColor: Color
+    let action: () -> Void
     
     @Environment(\.isEnabled) private var isEnabled
     
@@ -30,9 +30,9 @@ struct PrimaryButton: View {
     var body: some View {
         Text(title)
             .font(.pretendard(.body1))
-            .foregroundColor(isEnabled ? foregroundColor : .gray0)
+            .foregroundStyle(isEnabled ? foregroundColor : .gray0)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, 12)
             .background(isEnabled ? backgroundColor : .gray30)
             .cornerRadius(8)
             .wrapToButton {
