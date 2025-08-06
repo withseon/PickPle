@@ -9,52 +9,77 @@ import SwiftUI
 
 struct CommunityView: View {
     @StateObject var viewModel: CommunityViewModel
+    @EnvironmentObject var communityCoordinator: CommunityCoordinator
+    @State private var hasInitialLoad = false // 초기 로드 여부 추적
     
     var body: some View {
-        MainCommunityView(viewModel: viewModel)
-        .padding(.top, 20)
-        .background(.gray15)
-        .task {
-            viewModel.action(.fetchData)
-        }
-        // TODO: sheet
+        MainCommunityView(viewModel: viewModel, communityCoordinator: communityCoordinator)
+            .padding(.top, 20)
+            .background(.gray15)
+            .onAppear {
+                // 최초 로드시에만 데이터 페치
+                if !hasInitialLoad {
+                    viewModel.action(.fetchData)
+                    hasInitialLoad = true
+                }
+            }
+            .handleErrors(viewModel: viewModel)
     }
 }
 
 struct MainCommunityView: View {
     @ObservedObject var viewModel: CommunityViewModel
+    @ObservedObject var communityCoordinator: CommunityCoordinator
     
     var body: some View {
         ZStack(alignment: .top) {
             VStack(spacing: 0) {
-                FixedSearchHeaderView()
-                
+                FixedSearchHeaderView(communityCoordinator: communityCoordinator)
+
                 ScrollView {
-                    LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
+                    LazyVStack(spacing: 0) {
                         Section {
                             SliderSectionView(viewModel: viewModel)
                         }
-                        
+
                         Section {
-                            ForEach(viewModel.output.postSummaries, id: \.postId) { post in
-                                VStack {
-                                    CommunityPostView(post: post)
-                                        .padding(20)
-                                        .background(.gray15)
-                                    
-                                    if post != viewModel.output.postSummaries.last {
-                                        Rectangle()
-                                            .frame(height: 1)
-                                            .foregroundStyle(.gray30)
-                                            .padding(.horizontal, 20)
+                            if viewModel.output.postSummaries.isEmpty {
+                                // 게시글이 없을 때 표시할 뷰
+                                CommunityEmptyStateView()
+                                    .padding(.top, 80)
+                                    .background(.gray15)
+                            } else {
+                                // 게시글이 있을 때 표시할 리스트
+                                ForEach(viewModel.output.postSummaries, id: \.self.postId) { post in
+                                    VStack {
+                                        CommunityPostView(post: post)
+                                            .padding(20)
                                             .background(.gray15)
+                                            .onAppear {
+                                                if post == viewModel.output.postSummaries.last {
+                                                    viewModel.action(.pagination)
+                                                }
+                                            }
+
+                                        if post != viewModel.output.postSummaries.last {
+                                            Rectangle()
+                                                .frame(height: 1)
+                                                .foregroundStyle(.gray30)
+                                                .padding(.horizontal, 20)
+                                                .background(.gray15)
+                                        }
                                     }
                                 }
                             }
                         } header: {
-                            TimelineHeaderView()
+                            if !viewModel.output.postSummaries.isEmpty {
+                                TimelineHeaderView()
+                            }
                         }
                     }
+                }
+                .refreshable {
+                    viewModel.action(.fetchData)
                 }
             }
         }
@@ -64,10 +89,12 @@ struct MainCommunityView: View {
 // MARK: - 고정 검색 헤더
 struct FixedSearchHeaderView: View {
     @State private var searchText: String = ""
+    @ObservedObject var communityCoordinator: CommunityCoordinator
     
     var body: some View {
         HStack(spacing: 10) {
             SearchTextField("검색어를 입력해주세요.", text: $searchText)
+            
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(.deepSprout)
@@ -78,6 +105,7 @@ struct FixedSearchHeaderView: View {
             }
             .wrapToButton {
                 print("글 작성하기")
+                communityCoordinator.push(.createPost)
             }
         }
         .padding(.horizontal, 20)
@@ -87,8 +115,8 @@ struct FixedSearchHeaderView: View {
 
 // MARK: - 슬라이더 섹션
 struct SliderSectionView: View {
-    @StateObject var viewModel: CommunityViewModel
-    
+    @ObservedObject var viewModel: CommunityViewModel
+
     var body: some View {
         CustomSliderTrack(
             distance: viewModel.output.distance,
@@ -126,7 +154,7 @@ private struct CustomSliderTrack: View {
                     HStack(spacing: 8) {
                         Text("Distance")
                             .font(.pretendard(.body3))
-                            .foregroundColor(.deepSprout)
+                            .foregroundStyle(.deepSprout)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(
@@ -229,7 +257,7 @@ private struct CustomSliderTrack: View {
         var body: some View {
             Text(distance >= 1000 ? String(format: "%.1fKM", distance/1000).replacingOccurrences(of: ".0", with: "") : "\(Int(distance))M")
                 .font(.pretendard(.caption2))
-                .foregroundColor(.white)
+                .foregroundStyle(.gray0)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(
@@ -275,91 +303,133 @@ struct TimelineHeaderView: View {
 // MARK: - 커뮤니티 포스트
 struct CommunityPostView: View {
     let post: PostSummary
-    
+
+    private func storeInfoText(for post: PostSummary) -> String {
+        let address = post.geolocation.address
+        return address.isEmpty ? post.category : "\(post.category) • \(address)"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Rectangle()
-                    .frame(width: 32, height: 32)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                VStack(alignment: .leading) {
-                    Text(post.creator.nickname)
-                        .font(.pretendard(.caption1))
-                        .foregroundStyle(.gray100)
-                    Text(post.createdFromNow)
-                        .font(.pretendard(.caption2))
-                        .foregroundStyle(.gray60)
-                }
-                Spacer()
-            }
-            
-            StoreGalleryImageView(
-                imageUrls: post.files,
-                ratio: 5/3,
-                isPickchelin: false
-            )
-            .overlay(alignment: .topLeading) {
-                Image(post.isLike ? "like.fill" : "like")
-                    .iconFrame(24)
-                    .padding(8)
-                    .foregroundStyle(true ? .blackSprout : .gray45)
-                    .wrapToButton {
-                        print("좋아요")
+        NavigationLink(value: CommunityRoute.postDetail(post.postId)) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    if let profileImage = post.creator.profileImage {
+                        CachedImageView(imagePath: profileImage, size: CGSize(width: 32, height: 32))
+                            .clipShape (
+                                Circle()
+                            )
+                    } else {
+                        Image("empty_profile")
+                            .resizable()
+                            .frame(width: 32, height: 32)
+                            .clipShape(
+                                Circle()
+                            )
                     }
-                    .buttonStyle(.plain)
-            }
-            
-            HStack(spacing: 8) {
-                Text(post.title)
-                    .font(.pretendard(.body1))
-                    .foregroundStyle(.gray100)
-                    .lineLimit(1)
-                HStack(spacing: 2) {
-                    Image("like.fill")
-                        .iconFrame(20)
-                        .foregroundStyle(.brightForsythia)
-                    Text("\(post.likeCount)개")
-                        .font(.pretendard(.body1))
-                        .foregroundStyle(.gray100)
-                }
-                HStack(spacing: 2) {
-                    Image("distance")
-                        .iconFrame(20)
-                        .foregroundStyle(.deepSprout)
-                    Text("\(post.distance)")
-                        .font(.pretendard(.body1))
-                        .foregroundStyle(.gray100)
-                }
-            }
-            Text(post.content)
-                .font(.pretendard(.caption1))
-                .foregroundStyle(.gray60)
-            
-            HStack(spacing: 0) {
-                CachedImageView(imagePath: post.storeImageUrl ?? "", size: CGSize(width: 60, height: 60))
-                Rectangle()
-                    .frame(width: 1)
-                    .frame(maxHeight: .infinity)
-                    .foregroundStyle(.deepSprout)
-                    .padding(.trailing, 10)
-                HStack {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(post.storeName)
-                            .font(.pretendard(.body3))
-                            .foregroundStyle(.blackSprout)
-                        Text(post.storeInfo)
+                    VStack(alignment: .leading) {
+                        Text(post.creator.nickname)
                             .font(.pretendard(.caption1))
-                            .foregroundStyle(.deepSprout)
+                            .foregroundStyle(.gray100)
+                        Text(post.createdFromNow)
+                            .font(.pretendard(.caption2))
+                            .foregroundStyle(.gray60)
                     }
                     Spacer()
+                    Image(post.isLike ? "like.fill" : "like")
+                        .iconFrame(24)
+                        .padding(8)
+                        .foregroundStyle(true ? .blackSprout : .gray45)
+                        .wrapToButton {
+                            print("좋아요")
+                        }
+                        .buttonStyle(.plain)
+                }
+                
+                if !post.files.isEmpty {
+                    StoreGalleryImageView(
+                        imageUrls: post.files,
+                        ratio: 5/3,
+                        isPickchelin: false
+                    )
+                }
+                
+                HStack(spacing: 8) {
+                    Text(post.title)
+                        .font(.pretendard(.body1))
+                        .foregroundStyle(.gray100)
+                        .lineLimit(1)
+                    HStack(spacing: 2) {
+                        Image("like.fill")
+                            .iconFrame(20)
+                            .foregroundStyle(.brightForsythia)
+                        Text("\(post.likeCount)개")
+                            .font(.pretendard(.body1))
+                            .foregroundStyle(.gray100)
+                    }
+                    HStack(spacing: 2) {
+                        Image("distance")
+                            .iconFrame(20)
+                            .foregroundStyle(.deepSprout)
+                        Text("\(post.distance)")
+                            .font(.pretendard(.body1))
+                            .foregroundStyle(.gray100)
+                    }
+                }
+                Text(post.content)
+                    .font(.pretendard(.caption1))
+                    .foregroundStyle(.gray60)
+                    .lineLimit(5)
+                
+                // MARK: - 가게 정보
+                if !post.storeId.isEmpty {
+                    HStack(spacing: 0) {
+                        CachedImageView(imagePath: post.storeImageUrl ?? "", size: CGSize(width: 60, height: 60))
+                        Rectangle()
+                            .frame(width: 1)
+                            .frame(maxHeight: .infinity)
+                            .foregroundStyle(.deepSprout)
+                            .padding(.trailing, 10)
+                        HStack {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(post.storeName)
+                                    .font(.pretendard(.body3))
+                                    .foregroundStyle(.blackSprout)
+                                Text(storeInfoText(for: post))
+                                    .font(.pretendard(.caption1))
+                                    .foregroundStyle(.deepSprout)
+                            }
+                            Spacer()
+                        }
+                    }
+                    .background(.brightSprout)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(.deepSprout)
+                    )
                 }
             }
-            .background(.brightSprout)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(.deepSprout)
-            )
         }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - 게시글 없음 안내 뷰
+struct CommunityEmptyStateView: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            Spacer()
+            Text("근처에 게시글이 없습니다")
+                .font(.pretendard(.body1))
+                .foregroundStyle(.gray60)
+            
+            Text("다른 지역을 확인해보거나\n첫 번째 게시글을 작성해보세요!")
+                .font(.pretendard(.caption1))
+                .foregroundStyle(.gray45)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
     }
 }
