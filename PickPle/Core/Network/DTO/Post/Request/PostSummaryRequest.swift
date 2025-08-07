@@ -15,4 +15,8 @@ struct PostSummaryRequest: RequestableType {
     let limit: Int?
     let next: String?
     let orderBy: String?
+    
+    var keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy {
+        return .useDefaultKeys
+    }
 }
