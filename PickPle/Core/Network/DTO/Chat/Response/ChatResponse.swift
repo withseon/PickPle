@@ -30,7 +30,8 @@ extension ChatResponse {
                 nickname: sender.nick,
                 profileImage: sender.profileImage
             ),
-            files: files
+            files: files,
+            createdAtUTC: createdAt
         )
     }
 }
