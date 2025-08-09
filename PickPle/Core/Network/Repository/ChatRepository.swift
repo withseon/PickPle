@@ -13,6 +13,7 @@ protocol ChatRepository {
     func chatRoomList() -> AnyPublisher<Result<ChatRoomListResponse, NetworkError>, Never>
     func sendChat(roomId: String, param: ChatParam) -> AnyPublisher<Result<ChatResponse, NetworkError>, Never>
     func chatMessages(roomId: String, next: String?) -> AnyPublisher<Result<ChatListResponse, NetworkError>, Never>
+    func sendFile(roomId: String, files: [MultipartFile]) -> AnyPublisher<Result<ChatFileResponse, NetworkError>, Never>
 }
 
 final class DefaultChatRepository: ChatRepository {
@@ -74,7 +75,7 @@ final class DefaultChatRepository: ChatRepository {
             Task { [weak self] in
                 guard let self else { return }
                 do {
-                    let dto = SendChatRequest(content: param.content, file: param.files)
+                    let dto = SendChatRequest(content: param.content, files: param.files)
                     let chatMessage = try await networkManager.request(
                         target: ChatRouter.sendChat(roomId: roomId, request: dto),
                         responseType: ChatResponse.self,
@@ -105,6 +106,30 @@ final class DefaultChatRepository: ChatRepository {
                         errorType: UserErrorResponse.self
                     )
                     promise(.success(.success(chatMessages)))
+                } catch {
+                    if case let NetworkError.server(serverError) = error {
+                        promise(.success(.failure(.server(serverError))))
+                    } else {
+                        promise(.success(.failure(.unknown(error))))
+                    }
+                }
+            }
+        }
+        .eraseToAnyPublisher()
+    }
+    
+    func sendFile(roomId: String, files: [MultipartFile]) -> AnyPublisher<Result<ChatFileResponse, NetworkError>, Never> {
+        return Future { promise in
+            Task { [weak self] in
+                guard let self else { return }
+                do {
+                    let chatFiles = try await networkManager.uploadMultipart(
+                        target: ChatRouter.sendFile(roomId: roomId),
+                        fileData: files,
+                        responseType: ChatFileResponse.self,
+                        errorType: UserErrorResponse.self
+                    )
+                    promise(.success(.success(chatFiles)))
                 } catch {
                     if case let NetworkError.server(serverError) = error {
                         promise(.success(.failure(.server(serverError))))
