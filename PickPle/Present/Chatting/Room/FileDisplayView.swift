@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FileDisplayView: View {
     let message: ChatMessage
+    let showTime: Bool
     
     private var hasPDF: Bool {
         message.files.contains { $0.lowercased().hasSuffix(".pdf") }
@@ -18,7 +19,7 @@ struct FileDisplayView: View {
         message.files.filter { path in
             let ext = path.lowercased()
             return ext.hasSuffix(".jpg") || ext.hasSuffix(".jpeg") ||
-                   ext.hasSuffix(".png") || ext.hasSuffix(".gif") || ext.hasSuffix(".webp")
+                   ext.hasSuffix(".png") || ext.hasSuffix(".gif")
         }
     }
     
@@ -44,10 +45,12 @@ struct FileDisplayView: View {
                     .background(.gray30)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     
-                    Text(message.createdAt)
-                        .font(.pretendard(.caption2))
-                        .foregroundColor(.gray75)
-                        .padding(.leading, 4)
+                    if showTime {
+                        Text(message.createdAt)
+                            .font(.pretendard(.caption2))
+                            .foregroundStyle(.gray75)
+                            .padding(.trailing, 4)
+                    }
                 }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
@@ -66,10 +69,12 @@ struct FileDisplayView: View {
                     .background(.gray30)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     
-                    Text(message.createdAt)
-                        .font(.pretendard(.caption2))
-                        .foregroundColor(.gray75)
-                        .padding(.leading, 4)
+                    if showTime {
+                        Text(message.createdAt)
+                            .font(.pretendard(.caption2))
+                            .foregroundStyle(.gray75)
+                            .padding(.leading, 4)
+                    }
                 }
                 
                 Spacer(minLength: 60)
@@ -106,10 +111,15 @@ struct SingleImageView: View {
     
     var body: some View {
         if let path = imagePaths.first {
-            CachedImageView(imagePath: path, size: CGSize(width: 250, height: 200))
-                .frame(maxWidth: 250, maxHeight: 200)
-                .clipped()
-                .cornerRadius(4)
+            CachedImageView(
+                imagePath: path, 
+                size: CGSize(width: 250, height: 200),
+                imageUrls: imagePaths,
+                currentIndex: 0
+            )
+            .frame(maxWidth: 250, maxHeight: 200)
+            .clipped()
+            .cornerRadius(4)
         }
     }
 }
@@ -119,11 +129,16 @@ struct TwoImagesView: View {
     
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(Array(imagePaths.prefix(2)), id: \.self) { path in
-                CachedImageView(imagePath: path, size: CGSize(width: 123, height: 123))
-                    .frame(width: 123, height: 123)
-                    .clipped()
-                    .cornerRadius(4)
+            ForEach(Array(imagePaths.prefix(2).enumerated()), id: \.element) { index, path in
+                CachedImageView(
+                    imagePath: path, 
+                    size: CGSize(width: 123, height: 123),
+                    imageUrls: imagePaths,
+                    currentIndex: index
+                )
+                .frame(width: 123, height: 123)
+                .clipped()
+                .cornerRadius(4)
             }
         }
     }
@@ -134,11 +149,16 @@ struct ThreeImagesView: View {
     
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(Array(imagePaths.prefix(3)), id: \.self) { path in
-                CachedImageView(imagePath: path, size: CGSize(width: 80.5, height: 80.5))
-                    .frame(width: 80.5, height: 80.5)
-                    .clipped()
-                    .cornerRadius(4)
+            ForEach(Array(imagePaths.prefix(3).enumerated()), id: \.element) { index, path in
+                CachedImageView(
+                    imagePath: path, 
+                    size: CGSize(width: 80.5, height: 80.5),
+                    imageUrls: imagePaths,
+                    currentIndex: index
+                )
+                .frame(width: 80.5, height: 80.5)
+                .clipped()
+                .cornerRadius(4)
             }
         }
     }
@@ -150,20 +170,30 @@ struct FourImagesView: View {
     var body: some View {
         VStack(spacing: 4) {
             HStack(spacing: 4) {
-                ForEach(Array(imagePaths.prefix(2)), id: \.self) { path in
-                    CachedImageView(imagePath: path, size: CGSize(width: 123, height: 123))
-                        .frame(width: 123, height: 123)
-                        .clipped()
-                        .cornerRadius(4)
+                ForEach(Array(imagePaths.prefix(2).enumerated()), id: \.element) { index, path in
+                    CachedImageView(
+                        imagePath: path, 
+                        size: CGSize(width: 123, height: 123),
+                        imageUrls: imagePaths,
+                        currentIndex: index
+                    )
+                    .frame(width: 123, height: 123)
+                    .clipped()
+                    .cornerRadius(4)
                 }
             }
             
             HStack(spacing: 4) {
-                ForEach(Array(imagePaths.suffix(2)), id: \.self) { path in
-                    CachedImageView(imagePath: path, size: CGSize(width: 123, height: 123))
-                        .frame(width: 123, height: 123)
-                        .clipped()
-                        .cornerRadius(4)
+                ForEach(Array(imagePaths.suffix(2).enumerated()), id: \.element) { index, path in
+                    CachedImageView(
+                        imagePath: path, 
+                        size: CGSize(width: 123, height: 123),
+                        imageUrls: imagePaths,
+                        currentIndex: index + 2  // suffix 시작 인덱스 조정
+                    )
+                    .frame(width: 123, height: 123)
+                    .clipped()
+                    .cornerRadius(4)
                 }
             }
         }
@@ -176,20 +206,30 @@ struct FiveImagesView: View {
     var body: some View {
         VStack(spacing: 4) {
             HStack(spacing: 4) {
-                ForEach(Array(imagePaths.prefix(3)), id: \.self) { path in
-                    CachedImageView(imagePath: path, size: CGSize(width: 80.5, height: 80.5))
-                        .frame(width: 80.5, height: 80.5)
-                        .clipped()
-                        .cornerRadius(4)
+                ForEach(Array(imagePaths.prefix(3).enumerated()), id: \.element) { index, path in
+                    CachedImageView(
+                        imagePath: path, 
+                        size: CGSize(width: 80.5, height: 80.5),
+                        imageUrls: imagePaths,
+                        currentIndex: index
+                    )
+                    .frame(width: 80.5, height: 80.5)
+                    .clipped()
+                    .cornerRadius(4)
                 }
             }
             
             HStack(spacing: 4) {
-                ForEach(Array(imagePaths.suffix(2)), id: \.self) { path in
-                    CachedImageView(imagePath: path, size: CGSize(width: 123, height: 80.5))
-                        .frame(width: 123, height: 80.5)
-                        .clipped()
-                        .cornerRadius(4)
+                ForEach(Array(imagePaths.suffix(2).enumerated()), id: \.element) { index, path in
+                    CachedImageView(
+                        imagePath: path, 
+                        size: CGSize(width: 123, height: 80.5),
+                        imageUrls: imagePaths,
+                        currentIndex: index + 3  // suffix 시작 인덱스 조정
+                    )
+                    .frame(width: 123, height: 80.5)
+                    .clipped()
+                    .cornerRadius(4)
                 }
             }
         }
@@ -200,10 +240,18 @@ struct FiveImagesView: View {
 struct AllFilesListView: View {
     let filePaths: [String]
     
+    private var imagePaths: [String] {
+        filePaths.filter { path in
+            let ext = path.lowercased()
+            return ext.hasSuffix(".jpg") || ext.hasSuffix(".jpeg") ||
+                   ext.hasSuffix(".png") || ext.hasSuffix(".gif") || ext.hasSuffix(".webp")
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(filePaths, id: \.self) { path in
-                FileRowView(filePath: path)
+                FileRowView(filePath: path, allImagePaths: imagePaths)
             }
         }
         .frame(width: 250)
@@ -213,6 +261,7 @@ struct AllFilesListView: View {
 // MARK: - 파일 행 뷰
 struct FileRowView: View {
     let filePath: String
+    let allImagePaths: [String]
     
     private var fileName: String {
         URL(string: filePath)?.lastPathComponent ?? filePath
@@ -224,6 +273,10 @@ struct FileRowView: View {
                ext.hasSuffix(".png") || ext.hasSuffix(".gif") || ext.hasSuffix(".webp")
     }
     
+    private var currentImageIndex: Int {
+        allImagePaths.firstIndex(of: filePath) ?? 0
+    }
+    
     private var isPDF: Bool {
         filePath.lowercased().hasSuffix(".pdf")
     }
@@ -232,17 +285,22 @@ struct FileRowView: View {
         HStack(spacing: 12) {
             // 아이콘 또는 썸네일
             if isImage {
-                CachedImageView(imagePath: filePath, size: CGSize(width: 40, height: 40))
-                    .frame(width: 40, height: 40)
-                    .clipped()
-                    .cornerRadius(8)
+                CachedImageView(
+                    imagePath: filePath, 
+                    size: CGSize(width: 40, height: 40),
+                    imageUrls: allImagePaths,
+                    currentIndex: currentImageIndex
+                )
+                .frame(width: 40, height: 40)
+                .clipped()
+                .cornerRadius(8)
             } else {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(isPDF ? .red : .gray)
                     .frame(width: 40, height: 40)
                     .overlay(
                         Image(systemName: isPDF ? "doc.fill" : "doc")
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                             .font(.system(size: 16, weight: .medium))
                     )
             }
@@ -250,9 +308,8 @@ struct FileRowView: View {
             // 파일명
             Text(fileName)
                 .font(.system(size: 14))
-                .foregroundColor(.primary)
                 .lineLimit(1)
-            
+             
             Spacer()
         }
         .padding(.vertical, 4)
