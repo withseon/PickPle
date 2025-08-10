@@ -10,8 +10,9 @@ import SwiftUI
 struct ChatRoomListView: View {
     @StateObject var viewModel: ChatRoomListViewModel
     @State private var searchText = ""
+    @Environment(\.scenePhase) private var scenePhase // ✅ 추가
     
-    var filteredChatRooms: [ChatRoomThumbnail] {
+    var filteredChatRooms: [ChatRoom] {
         if searchText.isEmpty {
             return viewModel.output.chatRoomList
         } else {
@@ -45,25 +46,39 @@ struct ChatRoomListView: View {
             .task {
                 viewModel.action(.fetchChatList)
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ChatRoomRead"))) { notification in
+                if let userInfo = notification.userInfo,
+                   let roomId = userInfo["roomId"] as? String {
+                    viewModel.action(.markAsRead(roomId))
+                }
+            }
+        // ✅ 앱이 포그라운드로 돌아올 때 데이터 새로고침
+            .onChange(of: scenePhase) { phase in
+                if phase == .active {
+                    print("📱 ChatRoomListView - 포그라운드 복귀, 데이터 새로고침")
+                    viewModel.action(.fetchChatList) // 전체 새로고침
+                }
+            }
+            .handleErrors(viewModel: viewModel)
     }
 }
 
 // 개별 채팅방 행 뷰
 struct ChatRoomRow: View {
-    let chatRoom: ChatRoomThumbnail
+    let chatRoom: ChatRoom
     
     var body: some View {
         HStack(spacing: 12) {
             // 프로필 이미지
             if let profileImage = chatRoom.profileImage {
-                CachedImageView(imagePath: profileImage, size: CGSize(width: 56, height: 56))
+                CachedImageView(imagePath: profileImage, size: CGSize(width: 44, height: 44))
                     .clipShape (
                         Circle()
                     )
             } else {
                 Image("empty_profile")
                     .resizable()
-                    .frame(width: 56, height: 56)
+                    .frame(width: 44, height: 44)
                     .clipShape(
                         Circle()
                     )
@@ -74,33 +89,33 @@ struct ChatRoomRow: View {
                 HStack {
                     Text(chatRoom.nick)
                         .font(.pretendard(.body1))
-                        .foregroundColor(.gray100)
+                        .foregroundStyle(.gray100)
                     
                     Spacer()
                     
                     Text(chatRoom.updatedAt)
                         .font(.pretendard(.caption2))
-                        .foregroundColor(.gray75)
+                        .foregroundStyle(.gray75)
                 }
                 
                 HStack {
                     Text(chatRoom.lastChat)
                         .font(.pretendard(.caption1))
-                        .foregroundColor(.gray75)
+                        .foregroundStyle(.gray75)
                         .lineLimit(1)
                     
                     Spacer()
                     
                     // 읽지 않은 메시지 개수
-//                    if chatRoom.unreadCount > 0 {
-//                        Text("\(chatRoom.unreadCount)")
-//                            .font(.caption)
-//                            .fontWeight(.semibold)
-//                            .foregroundColor(.white)
-//                            .frame(minWidth: 20, minHeight: 20)
-//                            .background(Color.red)
-//                            .clipShape(Circle())
-//                    }
+                    if chatRoom.unreadCount > 0 {
+                        Text("\(chatRoom.unreadCount)")
+                            .font(.pretendard(.caption2))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .frame(minWidth: 20, minHeight: 20)
+                            .background(.red)
+                            .clipShape(Circle())
+                    }
                 }
             }
         }

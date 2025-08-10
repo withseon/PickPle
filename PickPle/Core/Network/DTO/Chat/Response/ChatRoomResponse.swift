@@ -32,8 +32,8 @@ struct ChatRoomResponse: Decodable {
 }
 
 extension ChatRoomResponse {
-    var asChatRoomThumbnail: ChatRoomThumbnail {
-        return ChatRoomThumbnail(
+    var asChatRoom: ChatRoom {
+        return ChatRoom(
             roomId: roomId,
             updatedAt: FormatHelper.shared.getChatTime(from: updatedAt),
             lastChat: lastChat?.content ?? "",
@@ -41,5 +41,9 @@ extension ChatRoomResponse {
             nick: participants.filter { $0.userId != UserDefaultsManager.userId }.first!.nick,
             profileImage: participants.filter { $0.userId != UserDefaultsManager.userId }.first!.profileImage
         )
+    }
+    
+    var unreadCount: Int? {
+        return nil
     }
 }

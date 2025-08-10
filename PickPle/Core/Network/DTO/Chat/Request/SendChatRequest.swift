@@ -9,5 +9,5 @@ import Foundation
 
 struct SendChatRequest: RequestableType {
     var content: String
-    var file: [String]
+    var files: [String]
 }

@@ -7,12 +7,13 @@
 
 import Foundation
 
-struct ChatMessage: Hashable {
-    var chatId: String
-    var roomId: String
-    var content: String
-    var createdAt: String
-    var updatedAt: String
-    var sender: UserInfo
-    var files: [String]
+struct ChatMessage {
+    let chatId: String
+    let roomId: String
+    let content: String
+    let createdAt: String
+    let updatedAt: String
+    let sender: UserInfo
+    let files: [String]
+    let createdAtUTC: String // 원본 UTC 시간 (날짜 구분선용)
 }

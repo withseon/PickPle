@@ -2,71 +2,95 @@
 //  ChatRoomView.swift
 //  PickPle
 //
-//  Created by 정인선 on 7/20/25.
+//  Created by 정인선 on 8/12/25.
 //
 
 import SwiftUI
 import PhotosUI
 
-// 메인 채팅뷰
+// MARK: - 채팅룸 뷰
 struct ChatRoomView: View {
     @StateObject var viewModel: ChatRoomViewModel
     @State private var newMessage = ""
-    @State private var scrollTarget: Int = 0
+
+    // MARK: - 파일 관련 상태
     @State private var showFileOptions = false
-    @State private var keyboardHeight: CGFloat = 0
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
-    @State private var selectedImages: [UIImage] = []
     @State private var showDocumentPicker = false
+
+    // MARK: - 스크롤 관련 상태
+    @State private var scrollTarget: Int = 0
+    @State private var showScrollToBottomButton = false
+    @State private var accumulatedScrollDistance: CGFloat = 0
+    @State private var lastDragValue: CGFloat = 0
+
+    // MARK: - UI 상태
     @FocusState private var isTextFieldFocused: Bool
-    
+    @Environment(\.scenePhase) private var scenePhase
+
     var nick: String
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // 채팅 메시지 리스트
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(Array(viewModel.output.chatMessages.enumerated()), id: \.offset) { index, message in
-                            MessageBubble(message: message)
-                                .id("message_\(index)")
+            // MARK: - 로딩 상태 또는 채팅 리스트
+            ZStack {
+                if viewModel.output.isInitialLoading {
+                    // 초기 로딩 인디케이터
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    // 채팅 리스트
+                    ChatListView(
+                        chatItems: viewModel.output.chatItems,
+                        isLoadingMore: viewModel.output.isLoadingMore,
+                        hasMoreMessages: viewModel.output.hasMoreMessages,
+                        scrollTarget: $scrollTarget,
+                        showScrollToBottomButton: $showScrollToBottomButton,
+                        accumulatedScrollDistance: $accumulatedScrollDistance,
+                        lastDragValue: $lastDragValue,
+                        onLoadOlderMessages: {
+                            viewModel.action(.loadOlderMessages)
+                        },
+                        onDismiss: {
+                            dismissAll()
                         }
-                        
-                        // 하단 앵커
-                        Color.clear
-                            .frame(height: 1)
-                            .id("bottom")
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 20)
-                }
-                .opacity(viewModel.output.isInitialLoading ? 0 : 1)
-                .onChange(of: viewModel.output.isInitialLoading) { isLoading in
-                    if !isLoading {
-                        DispatchQueue.main.async {
-                            scrollToBottom(proxy: proxy, animated: false)
-                        }
-                    }
-                }
-                .onChange(of: scrollTarget) { _ in
-                    scrollToBottom(proxy: proxy, animated: true)
+                    )
                 }
             }
-            
-            if viewModel.output.isInitialLoading {
-                Spacer()
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle())
-                Spacer()
+            .overlay(alignment: .bottomTrailing) {
+                if showScrollToBottomButton {
+                    ScrollToBottomButton {
+                        triggerScroll()
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 16)
+                }
             }
-            
-            // 메시지 입력창
+            .onTapGesture {
+                dismissAll()
+            }
+
+            // MARK: - 파일 미리보기
+            if !viewModel.output.selectedFiles.isEmpty {
+                FilePreviewView(
+                    selectedFiles: $viewModel.output.selectedFiles,
+                    onSendFiles: {
+                        handleSendFiles()
+                    },
+                    onRemoveFile: { index in
+                        viewModel.action(.removeSelectedFile(at: index))
+                    }
+                )
+            }
+
+            // MARK: - 메시지 입력창
             MessageInputBar(
                 newMessage: $newMessage,
                 isTextFieldFocused: $isTextFieldFocused,
                 showFileOptions: showFileOptions,
+                hasSelectedFiles: !viewModel.output.selectedFiles.isEmpty,
+                selectedFiles: viewModel.output.selectedFiles,
                 onSend: sendMessage,
                 onPlusButtonTapped: {
                     handlePlusButtonTap()
@@ -75,62 +99,40 @@ struct ChatRoomView: View {
                     handleTextFieldTap()
                 }
             )
-            
-            // 파일 옵션 뷰 (MessageInputBar 아래)
+
+            // MARK: - 파일 옵션 뷰 (MessageInputBar 아래)
             if showFileOptions {
                 FileOptionsView(
                     selectedPhotoItems: $selectedPhotoItems,
                     showDocumentPicker: $showDocumentPicker,
-                    onImageTap: {
-                        print("앨범 선택")
-                    },
+                    onImageTap: { },
                     onCameraTap: {
-                        print("카메라 촬영")
                         dismissFileOptions()
                     },
                     onFileTap: {
-                        print("파일 선택")
                         showDocumentPicker = true
                     }
                 )
-                .frame(height: max(keyboardHeight, 200))
+                .frame(height: 200)
                 .background(.gray15)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .transition(.move(edge: .bottom))
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle(nick)
         .navigationBarTitleDisplayMode(.inline)
         .background(.gray15)
-        .onTapGesture {
-            dismissAll()
+        .toolbar(.hidden, for: .tabBar)
+        .onAppear {
+            setupInitialData()
         }
-        .task {
-            viewModel.action(.fetchMessages)
+        .onDisappear {
+            print("🔴 ChatRoomView onDisappear - roomId: \(viewModel.roomId)")
+            ChatStateManager.shared.exitChatRoom()
+            viewModel.action(.socketDisconnect)
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
-            if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                keyboardHeight = keyboardFrame.height
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            keyboardHeight = 0
-        }
-        .onChange(of: selectedPhotoItems) { newItems in
-            Task {
-                selectedImages.removeAll()
-                
-                for item in newItems {
-                    if let data = try? await item.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        selectedImages.append(image)
-                    }
-                }
-                
-                if !selectedImages.isEmpty {
-                    dismissFileOptions()
-                    handleSelectedImages(selectedImages)
-                }
-            }
+        .onChange(of: scenePhase) { phase in
+            handleScenePhase(phase)
         }
         .sheet(isPresented: $showDocumentPicker) {
             DocumentPicker(
@@ -147,316 +149,195 @@ struct ChatRoomView: View {
                 }
             )
         }
-    }
-    
-    private func handleSelectedImages(_ images: [UIImage]) {
-        // TODO: 이미지 선택 후 처리
-        for image in images {
-            print("선택된 이미지 크기: \(image.size)")
-        }
-        
-        selectedPhotoItems.removeAll()
-        selectedImages.removeAll()
-    }
-    
-    private func handleDocumentPicked(_ url: URL) {
-        guard url.startAccessingSecurityScopedResource() else { return }
-        defer { url.stopAccessingSecurityScopedResource() }
-        
-        do {
-            let data = try Data(contentsOf: url)
-            let fileName = url.lastPathComponent
-            let fileExtension = url.pathExtension.lowercased()
-            
-            print("선택된 파일: \(fileName)")
-            print("파일 크기: \(data.count) bytes")
-            print("파일 확장자: \(fileExtension)")
-            
-            // 파일 형식에 따른 처리
-            switch fileExtension {
-            case "pdf":
-                handlePDFFile(data, fileName: fileName)
-            case "jpg", "jpeg", "png", "gif":
-                if let image = UIImage(data: data) {
-                    handleSelectedImages([image])
-                }
-            default:
-                print("지원하지 않는 파일 형식입니다.")
-            }
-            
-        } catch {
-            print("파일 읽기 오류: \(error)")
+        .onChange(of: selectedPhotoItems) { items in
+            handlePhotoSelection(items)
         }
     }
-    
-    private func handlePDFFile(_ data: Data, fileName: String) {
-        print("PDF 파일: \(fileName)")
-        print("PDF 파일 크기: \(data.count) bytes")
-        // TODO: 파일 선택 후 처리
-        
-        selectedPhotoItems.removeAll()
+
+    // MARK: - Helper Methods
+    private func setupInitialData() {
+        print("🟢 ChatRoomView onAppear - roomId: \(viewModel.roomId)")
+
+        viewModel.action(.fetchMessages)
+        ChatStateManager.shared.enterChatRoom(roomId: viewModel.roomId)
+        clearNotifications()
+        viewModel.action(.markAsRead)
     }
-    
+
+    private func handleScenePhase(_ phase: ScenePhase) {
+        switch phase {
+        case .active:
+            print("📱 Scene Active - 웹소켓 연결")
+            viewModel.action(.socketConnect)
+            clearNotifications()
+        case .inactive:
+            print("📱 Scene Inactive")
+        case .background:
+            print("📱 Scene Background - 웹소켓 해제")
+            viewModel.action(.socketDisconnect)
+        @unknown default:
+            break
+        }
+    }
+
+    private func sendMessage() {
+        if !viewModel.output.selectedFiles.isEmpty {
+            handleSendFiles()
+            triggerScroll()
+            return
+        }
+
+        guard !newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        viewModel.action(.sendMessage(newMessage))
+        newMessage = ""
+
+        triggerScroll()
+    }
+
+    private func handleSendFiles() {
+        viewModel.action(.sendFile(viewModel.output.selectedFiles))
+        viewModel.action(.clearSelectedFiles)
+    }
+
+    private func clearNotifications() {
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["chat_\(viewModel.roomId)"])
+    }
+
     private func handlePlusButtonTap() {
-        withAnimation(.easeOut(duration: 0.3)) {
-            if showFileOptions {
+        if showFileOptions {
+            withAnimation(.easeOut(duration: 0.3)) {
                 showFileOptions = false
-            } else if isTextFieldFocused {
-                // 키보드가 올라와있으면 키보드를 먼저 내림
-                isTextFieldFocused = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        showFileOptions = true
-                    }
+            }
+        } else if isTextFieldFocused {
+            isTextFieldFocused = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    showFileOptions = true
                 }
-            } else {
-                // 키보드가 없으면 바로 파일 옵션 표시
+            }
+        } else {
+            withAnimation(.easeOut(duration: 0.3)) {
                 showFileOptions = true
             }
         }
     }
-    
+
     private func handleTextFieldTap() {
-        withAnimation(.easeOut(duration: 0.3)) {
-            if showFileOptions {
-                // 닫고 키보드 올림
+        if showFileOptions {
+            withAnimation(.easeOut(duration: 0.3)) {
                 showFileOptions = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    isTextFieldFocused = true
-                }
-            } else {
-                // 즉시 키보드 올림
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 isTextFieldFocused = true
             }
-        }
-    }
-    
-    private func dismissFileOptions() {
-        showFileOptions = false
-    }
-    
-    private func dismissAll() {
-        isTextFieldFocused = false
-        showFileOptions = false
-    }
-    
-    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
-        if animated {
-            withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo("bottom", anchor: .bottom)
-            }
         } else {
-            proxy.scrollTo("bottom", anchor: .bottom)
+            isTextFieldFocused = true
         }
     }
-    
+
+    private func dismissFileOptions() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            showFileOptions = false
+        }
+    }
+
+    private func dismissAll() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            isTextFieldFocused = false
+            showFileOptions = false
+        }
+    }
+
     private func triggerScroll() {
         scrollTarget += 1
     }
-    
-    private func sendMessage() {
-        guard !newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        viewModel.action(.sendMessage(newMessage))
-        newMessage = ""
-        
-        triggerScroll()
-    }
-}
 
-// 파일 옵션 뷰
-struct FileOptionsView: View {
-    @Binding var selectedPhotoItems: [PhotosPickerItem]
-    @Binding var showDocumentPicker: Bool
-    let onImageTap: () -> Void
-    let onCameraTap: () -> Void
-    let onFileTap: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-            Spacer()
-            HStack(spacing: 30) {
-                PhotosPicker(
-                    selection: $selectedPhotoItems,
-                    maxSelectionCount: 5,
-                    matching: .images
-                ) {
-                    FileOptionButton(
-                        icon: "photo",
-                        title: "사진"
-                    )
-                }
-                
-                FileOptionButton(
-                    icon: "camera",
-                    title: "카메라",
-                    action: onCameraTap
-                )
-                
-                FileOptionButton(
-                    icon: "doc",
-                    title: "파일",
-                    action: onFileTap
-                )
-            }
-            
-            Spacer()
-        }
-        .background(.gray15)
-    }
-}
+    // MARK: - File Conversion Methods
+    private func handlePhotoSelection(_ items: [PhotosPickerItem]) {
+        Task.detached(priority: .userInitiated) {
+            var convertedFiles: [SelectedFile] = []
 
-// 파일 옵션 버튼
-struct FileOptionButton: View {
-    let icon: String
-    let title: String
-    var action: (() -> Void)? = nil
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            if let action {
-                buttonContent
-                    .wrapToButton {
-                        action()
+            await withTaskGroup(of: SelectedFile?.self) { group in
+                for item in items.prefix(5) {
+                    group.addTask {
+                        do {
+                            if let data = try await item.loadTransferable(type: Data.self) {
+                                let downsampledImage = ImageProcessingManager.shared.downsampleForDisplay(
+                                    data: data,
+                                    pointSize: CGSize(width: 300, height: 300),
+                                    scale: 1.0
+                                )
+
+                                return SelectedFile(
+                                    id: UUID(),
+                                    type: .image,
+                                    image: downsampledImage,
+                                    data: data,
+                                    fileName: "image.jpg"
+                                )
+                            }
+                        } catch {
+                            print("이미지 로드 에러: \(error)")
+                        }
+
+                        return nil
                     }
-            } else {
-                buttonContent
-            }
-            
-            Text(title)
-                .font(.pretendard(.caption1))
-                .foregroundColor(.gray100)
-        }
-    }
-    
-    private var buttonContent: some View {
-        Image(systemName: icon)
-            .frame(width: 50, height: 50)
-            .foregroundColor(.blackSprout)
-            .background(.gray0)
-            .clipShape(Circle())
-            .shadow(color: .gray100.opacity(0.1), radius: 2, x: 0, y: 1)
-    }
-}
+                }
 
-// 메시지 버블 컴포넌트
-struct MessageBubble: View {
-    let message: ChatMessage
-    
-    var body: some View {
-        HStack {
-            if message.sender.userId == UserDefaultsManager.userId {
-                Spacer(minLength: 60)
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(message.content)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(.blackSprout)
-                        .foregroundColor(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 18))
-                    
-                    Text(message.createdAt)
-                        .font(.pretendard(.caption2))
-                        .foregroundColor(.gray75)
-                        .padding(.trailing, 4)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(message.content)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(.gray0)
-                        .foregroundColor(.gray100)
-                        .clipShape(RoundedRectangle(cornerRadius: 18))
-                        .shadow(color: .gray100.opacity(0.1), radius: 1, x: 0, y: 1)
-                    
-                    Text(message.createdAt)
-                        .font(.pretendard(.caption2))
-                        .foregroundColor(.gray75)
-                        .padding(.leading, 4)
-                }
-                
-                Spacer(minLength: 60)
-            }
-        }
-    }
-    
-    private func timeString(from date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-}
-
-// 메시지 입력 바 컴포넌트
-struct MessageInputBar: View {
-    @Binding var newMessage: String
-    @FocusState.Binding var isTextFieldFocused: Bool
-    let showFileOptions: Bool
-    let onSend: () -> Void
-    let onPlusButtonTapped: () -> Void
-    let onTextFieldTapped: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-            
-            HStack(spacing: 12) {
-                // 파일 전송
-                ZStack {
-                    Image(systemName: "plus")
-                        .iconFrame(20)
-                        .foregroundColor(.gray60)
-                        .wrapToButton {
-                            onPlusButtonTapped()
-                        }
-                        .opacity(showFileOptions ? 0 : 1)
-                    
-                    Image(systemName: "xmark")
-                        .iconFrame(20)
-                        .foregroundColor(.gray60)
-                        .wrapToButton {
-                            onPlusButtonTapped()
-                        }
-                        .opacity(showFileOptions ? 1 : 0)
-                }
-                
-                // 텍스트 입력 필드
-                TextField("메시지를 입력하세요...", text: $newMessage, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.gray0)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color(.systemGray4), lineWidth: 1)
-                    )
-                    .focused($isTextFieldFocused)
-                    .onSubmit {
-                        onSend()
+                for await file in group {
+                    if let file = file {
+                        convertedFiles.append(file)
                     }
-                    .simultaneousGesture(
-                        TapGesture().onEnded {
-                            onTextFieldTapped()
-                        }
-                    )
-                
-                // 전송 버튼
-                Image(systemName: "arrow.up.circle.fill")
-                    .iconFrame(20)
-                    .foregroundStyle(newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray60 : .blackSprout)
-                .wrapToButton {
-                    onSend()
                 }
-                .disabled(newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .toolbar(.hidden, for: .tabBar)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(.gray30)
+
+            await MainActor.run {
+                self.viewModel.action(.addSelectedFiles(convertedFiles))
+                self.selectedPhotoItems.removeAll()
+
+                if !convertedFiles.isEmpty {
+                    self.dismissFileOptions()
+                }
+            }
         }
-        .animation(.easeOut(duration: 0.25), value: isTextFieldFocused)
+    }
+
+    private func handleDocumentPicked(_ url: URL) {
+        guard viewModel.output.selectedFiles.count < 5 else { return }
+
+        guard url.startAccessingSecurityScopedResource() else { return }
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let fileName = url.lastPathComponent
+            let fileExtension = url.pathExtension.lowercased()
+
+            let fileType: SelectedFile.FileType
+            var image: UIImage? = nil
+
+            switch fileExtension {
+            case "pdf":
+                fileType = .pdf
+            case "jpg", "jpeg", "png", "gif":
+                fileType = .image
+                image = UIImage(data: data)
+            default:
+                return
+            }
+
+            let file = SelectedFile(
+                id: UUID(),
+                type: fileType,
+                image: image,
+                data: data,
+                fileName: fileName
+            )
+
+            viewModel.action(.addSelectedFiles([file]))
+
+        } catch {
+            print("파일 읽기 오류: \(error)")
+        }
     }
 }
