@@ -145,4 +145,132 @@ final class FormatHelper {
         koreanTimeFormatter.dateFormat = "hh:mma"
         return koreanTimeFormatter.string(from: date)
     }
+
+    
+    /// UTC 문자열에서 날짜 부분만 추출 (yyyy-MM-dd 형식)
+    func getDateFromUTC(_ utcString: String) -> String {
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+        guard let date = dateFormatter.date(from: utcString) else {
+            return ""
+        }
+
+        // 한국 시간으로 변환하여 날짜 추출
+        koreanTimeFormatter.dateFormat = "yyyy-MM-dd"
+        return koreanTimeFormatter.string(from: date)
+    }
+
+    /// 날짜 구분선 포맷팅 (yyyy년 M월 d일)
+    func formatDateSeparator(_ dateString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        guard let date = formatter.date(from: dateString) else {
+            return dateString
+        }
+
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "yyyy년 M월 d일"
+        outputFormatter.locale = Locale(identifier: "ko_KR")
+
+        return outputFormatter.string(from: date)
+    }
+
+    /// 주문 날짜/시간 포맷팅 (2025년 4월 22일 오후 6:26)
+    func formatOrderDateTime(_ utcString: String) -> String {
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+        guard let date = dateFormatter.date(from: utcString) else {
+            return ""
+        }
+
+        // 한국 시간으로 변환
+        koreanTimeFormatter.dateFormat = "yyyy년 M월 d일 a h:mm"
+        koreanTimeFormatter.locale = Locale(identifier: "ko_KR")
+        return koreanTimeFormatter.string(from: date)
+    }
+
+    /// 특정 시간으로부터 30분 이내인지 확인
+    func isWithin30Minutes(from utcString: String) -> Bool {
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+        guard let date = dateFormatter.date(from: utcString) else {
+            return false
+        }
+
+        let now = Date()
+        let timeInterval = now.timeIntervalSince(date)
+
+        // 30분 = 1800초
+        return timeInterval <= 1800 && timeInterval >= 0
+    }
+
+    /// 게시글 날짜 포맷팅 (방금 전, n분 전, n시간 전, MM월 dd일)
+    func formatPostDate(_ utcString: String) -> String {
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+        guard let date = dateFormatter.date(from: utcString) else {
+            return ""
+        }
+
+        let now = Date()
+        let timeInterval = now.timeIntervalSince(date)
+
+        if timeInterval < 0 {
+            return "방금 전"
+        }
+
+        let seconds = Int(timeInterval)
+        let minutes = seconds / 60
+        let hours = minutes / 60
+        let days = hours / 24
+
+        switch seconds {
+        case 0..<60:
+            return "방금 전"
+        case 60..<3600:
+            return "\(minutes)분 전"
+        case 3600..<86400:
+            return "\(hours)시간 전"
+        default:
+            // 1일 이상이면 날짜 표시 (MM월 dd일)
+            koreanTimeFormatter.dateFormat = "M월 d일"
+            koreanTimeFormatter.locale = Locale(identifier: "ko_KR")
+            return koreanTimeFormatter.string(from: date)
+        }
+    }
+
+    /// 댓글 날짜/시간 포맷팅 (방금 전, n분 전, n시간 전, MM월 dd일 HH:mm)
+    func formatCommentDateTime(_ utcString: String) -> String {
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+        guard let date = dateFormatter.date(from: utcString) else {
+            return ""
+        }
+
+        let now = Date()
+        let timeInterval = now.timeIntervalSince(date)
+
+        if timeInterval < 0 {
+            return "방금 전"
+        }
+
+        let seconds = Int(timeInterval)
+        let minutes = seconds / 60
+        let hours = minutes / 60
+
+        switch seconds {
+        case 0..<60:
+            return "방금 전"
+        case 60..<3600:
+            return "\(minutes)분 전"
+        case 3600..<86400:
+            return "\(hours)시간 전"
+        default:
+            // 1일 이상이면 날짜와 시간 표시 (MM월 dd일 HH:mm)
+            koreanTimeFormatter.dateFormat = "M월 d일 HH:mm"
+            koreanTimeFormatter.locale = Locale(identifier: "ko_KR")
+            return koreanTimeFormatter.string(from: date)
+        }
+    }
 }

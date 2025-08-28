@@ -8,8 +8,6 @@
 import Foundation
 
 final class DIContainer: ObservableObject {
-    private let networkManager: NetworkManager
-    
     let userRepository: UserRepository
     let storeRepository: StoreRepository
     let postRepository: PostRepository
@@ -22,16 +20,40 @@ final class DIContainer: ObservableObject {
     let cartManager: CartManager
     let paymentManager: PaymentManager
 
-    init() {
-        self.networkManager = NetworkManager()
-        self.userRepository = DefaultUserRepository(networkManager: networkManager)
-        self.storeRepository = DefaultStoreRepository(networkManager: networkManager)
-        self.postRepository = DefaultPostRepository(networkManager: networkManager)
-        self.chatRepository = DefaultChatRepository(networkManager: networkManager)
-        self.realmRepository = DefaultRealmRepository()
-        self.bannerRepository = DefaultBannerRepository(networkManager: networkManager)
-        self.orderRepository = DefaultOrderRepository(networkManager: networkManager)
-        self.paymentRepository = DefaultPaymentRepository(networkManager: networkManager)
+    // Production용 (기존 코드 호환)
+    convenience init() {
+        let networkManager = NetworkManager()
+        self.init(
+            userRepository: DefaultUserRepository(networkManager: networkManager),
+            storeRepository: DefaultStoreRepository(networkManager: networkManager),
+            postRepository: DefaultPostRepository(networkManager: networkManager),
+            chatRepository: DefaultChatRepository(networkManager: networkManager),
+            realmRepository: DefaultRealmRepository(),
+            bannerRepository: DefaultBannerRepository(networkManager: networkManager),
+            orderRepository: DefaultOrderRepository(networkManager: networkManager),
+            paymentRepository: DefaultPaymentRepository(networkManager: networkManager)
+        )
+    }
+
+    // Testing용 (Mock 주입 가능)
+    init(
+        userRepository: UserRepository,
+        storeRepository: StoreRepository,
+        postRepository: PostRepository,
+        chatRepository: ChatRepository,
+        realmRepository: RealmRepository,
+        bannerRepository: BannerRepository,
+        orderRepository: OrderRepository,
+        paymentRepository: PaymentRepository
+    ) {
+        self.userRepository = userRepository
+        self.storeRepository = storeRepository
+        self.postRepository = postRepository
+        self.chatRepository = chatRepository
+        self.realmRepository = realmRepository
+        self.bannerRepository = bannerRepository
+        self.orderRepository = orderRepository
+        self.paymentRepository = paymentRepository
 
         self.cartManager = CartManager()
         self.paymentManager = PaymentManager(

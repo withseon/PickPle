@@ -147,15 +147,15 @@ final class DefaultUserRepository: UserRepository {
         return Future { promise in
             Task { [weak self] in
                 guard let self else { return }
-                do {
+//                do {
 //                    await storeTokens(response: <#T##T#>, promise: <#T##(Result<Result<T, NetworkError>, Never>) -> Void#>)
-                } catch {
-                    if case let NetworkError.server(serverError) = error {
-                        promise(.success(.failure(.server(serverError))))
-                    } else {
-                        promise(.success(.failure(.unknown(error))))
-                    }
-                }
+//                } catch {
+//                    if case let NetworkError.server(serverError) = error {
+//                        promise(.success(.failure(.server(serverError))))
+//                    } else {
+//                        promise(.success(.failure(.unknown(error))))
+//                    }
+//                }
             }
         }
         .eraseToAnyPublisher()
