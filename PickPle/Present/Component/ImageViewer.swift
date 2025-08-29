@@ -234,33 +234,26 @@ struct MediaViewerItem: View {
     
     // 인증 토큰과 함께 AVPlayer 설정
     private func setupPlayerWithAuth(url: URL, isFallback: Bool = false) async {
-        await withCheckedContinuation { continuation in
-            SecureTokenManager.shared.retrieveAndDecryptToken(forKey: SecureKey.ACCESS_TOKEN) { result in
-                Task {
-                    switch result {
-                    case .success(let token):
-                        // APIRequestInterceptor와 동일한 헤더 패턴 적용
-                        let httpHeaders = [
-                            "SesacKey": APIKEY.PICKUP,
-                            "Authorization": token,
-                            "User-Agent": "PickPle iOS App"
-                        ]
-                        
-                        let asset = AVURLAsset(url: url, options: [
-                            "AVURLAssetHTTPHeaderFieldsKey": httpHeaders
-                        ])
-                        
-                        let playerItem = AVPlayerItem(asset: asset)
-                        player = AVPlayer(playerItem: playerItem)
-                        
-                    case .failure(let error):
-                        // 토큰 없이 시도 (테스트용)
-                        player = AVPlayer(url: url)
-                    }
-                    
-                    continuation.resume()
-                }
-            }
+        do {
+            let token = try await TokenManager.shared.retrieve(forKey: SecureKey.ACCESS_TOKEN)
+
+            // APIRequestInterceptor와 동일한 헤더 패턴 적용
+            let httpHeaders = [
+                "SesacKey": APIKEY.PICKUP,
+                "Authorization": token,
+                "User-Agent": "PickPle iOS App"
+            ]
+
+            let asset = AVURLAsset(url: url, options: [
+                "AVURLAssetHTTPHeaderFieldsKey": httpHeaders
+            ])
+
+            let playerItem = AVPlayerItem(asset: asset)
+            player = AVPlayer(playerItem: playerItem)
+        } catch {
+            print("❌ [ImageViewer] 토큰 조회 실패: \(error)")
+            // 토큰 없이 시도 (테스트용)
+            player = AVPlayer(url: url)
         }
     }
     
