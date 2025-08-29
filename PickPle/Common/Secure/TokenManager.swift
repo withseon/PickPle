@@ -11,7 +11,7 @@ import Foundation
 actor TokenManager {
     static let shared = TokenManager()
 
-    // 메모리 캐시 (Actor-isolated로 자동 동기화)
+    /// 메모리 캐시 (Actor-isolated로 자동 동기화)
     private var tokenCache: [String: String] = [:]
 
     private init() {
@@ -25,6 +25,7 @@ actor TokenManager {
         print("[TokenManager] 토큰 저장 시작 - key: \(key)")
 
         // 1. Keychain에 저장 (실패 시 예외 발생)
+        // Keychain은 Thread-Safe하지만, Actor를 통해 순차적 접근 보장
         try await saveToKeychain(token, forKey: key)
 
         // 2. Keychain 저장 성공 시에만 메모리 캐시에 저장
@@ -43,18 +44,18 @@ actor TokenManager {
             return cached
         }
 
-        // 2. Keychain에서 조회
+        // 2. Keychain에서 조회 (캐시 미스 시)
         print("[TokenManager] 메모리 캐시 미스, Keychain 조회 - key: \(key)")
         let token = try await loadFromKeychain(forKey: key)
 
-        // 3. 메모리 캐시에 저장
+        // 3. 메모리 캐시에 저장 (다음 조회를 위해)
         tokenCache[key] = token
-        
+
         print("[TokenManager] 토큰 조회 완료 - key: \(key)")
         return token
     }
 
-    /// 토큰 삭제
+    /// 토큰 삭제 (메모리 캐시 + Keychain)
     func delete(forKey key: String) async throws {
         print("[TokenManager] 토큰 삭제 시작 - key: \(key)")
 
@@ -74,14 +75,14 @@ actor TokenManager {
         print("[TokenManager] 메모리 캐시 초기화 완료 - 삭제된 토큰 수: \(count)")
     }
 
-    /// 토큰 존재 여부 확인
+    /// 토큰 존재 여부 확인 (메모리 캐시 + Keychain)
     func exists(forKey key: String) async -> Bool {
-        // 메모리 캐시 확인
+        // 1. 메모리 캐시 확인
         if tokenCache[key] != nil {
             return true
         }
 
-        // Keychain 확인
+        // 2. Keychain 확인
         do {
             _ = try await loadFromKeychain(forKey: key)
             return true
@@ -92,8 +93,7 @@ actor TokenManager {
 
     // MARK: - Private Keychain Operations
 
-    /// Keychain에 토큰 저장
-    /// 기존 항목이 있으면 삭제 후 새로 추가
+    /// Keychain에 토큰 저장 (기존 항목이 있으면 덮어쓰기)
     private func saveToKeychain(_ token: String, forKey key: String) async throws {
         guard let data = token.data(using: .utf8) else {
             print("❌ [TokenManager] Keychain 저장 실패 - encodingFailed")
@@ -149,7 +149,7 @@ actor TokenManager {
     }
 
     /// Keychain에서 토큰 삭제
-    /// 항목이 없어도 에러를 발생시키지 않음 (errSecItemNotFound 허용)
+    /// 항목이 없어도 에러를 발생시키지 않음
     private func deleteFromKeychain(forKey key: String) async throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
