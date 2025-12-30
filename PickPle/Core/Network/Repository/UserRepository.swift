@@ -147,15 +147,15 @@ final class DefaultUserRepository: UserRepository {
         return Future { promise in
             Task { [weak self] in
                 guard let self else { return }
-                do {
+//                do {
 //                    await storeTokens(response: <#T##T#>, promise: <#T##(Result<Result<T, NetworkError>, Never>) -> Void#>)
-                } catch {
-                    if case let NetworkError.server(serverError) = error {
-                        promise(.success(.failure(.server(serverError))))
-                    } else {
-                        promise(.success(.failure(.unknown(error))))
-                    }
-                }
+//                } catch {
+//                    if case let NetworkError.server(serverError) = error {
+//                        promise(.success(.failure(.server(serverError))))
+//                    } else {
+//                        promise(.success(.failure(.unknown(error))))
+//                    }
+//                }
             }
         }
         .eraseToAnyPublisher()
@@ -295,20 +295,20 @@ extension DefaultUserRepository {
         response: T,
         promise: @escaping (Result<Result<T, NetworkError>, Never>) -> Void
     ) async {
-        await withCheckedContinuation { continuation in
-            SecureTokenManager.shared.encryptAndStoreTokens(
-                accessToken: response.accessToken,
-                refreshToken: response.refreshToken,
-                forKeys: (SecureKey.ACCESS_TOKEN, SecureKey.REFRESH_TOKEN)
-            ) { result in
-                switch result {
-                case .success:
-                    promise(.success(.success(response)))
-                case .failure(let error):
-                    promise(.success(.failure(.unknown(error))))
+        do {
+            // 병렬로 저장
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    try await TokenManager.shared.save(response.accessToken, forKey: SecureKey.ACCESS_TOKEN)
                 }
-                continuation.resume()
+                group.addTask {
+                    try await TokenManager.shared.save(response.refreshToken, forKey: SecureKey.REFRESH_TOKEN)
+                }
+                try await group.waitForAll()
             }
+            promise(.success(.success(response)))
+        } catch {
+            promise(.success(.failure(.unknown(error))))
         }
     }
 }

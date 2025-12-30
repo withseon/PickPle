@@ -41,36 +41,20 @@ struct UserDefaultsManager {
     
     private static func clearKeychainTokens() {
         // 백그라운드에서 비동기로 실행 (앱 초기화를 블록하지 않음)
-        DispatchQueue.global(qos: .background).async {
-            let group = DispatchGroup()
-            
-            // Access Token 삭제
-            group.enter()
-            SecureTokenManager.shared.deleteToken(forKey: SecureKey.ACCESS_TOKEN) { result in
-                switch result {
-                case .success:
-                    print("✅ Access Token 삭제 완료")
-                case .failure(let error):
-                    print("❌ Access Token 삭제 실패: \(error)")
-                }
-                group.leave()
+        Task.detached(priority: .background) {
+            do {
+                // Access Token 삭제
+                try await TokenManager.shared.delete(forKey: SecureKey.ACCESS_TOKEN)
+                print("✅ Access Token 삭제 완료")
+
+                // Refresh Token 삭제
+                try await TokenManager.shared.delete(forKey: SecureKey.REFRESH_TOKEN)
+                print("✅ Refresh Token 삭제 완료")
+
+                print("✅ 키체인 토큰 초기화 완료")
+            } catch {
+                print("❌ 키체인 토큰 삭제 실패: \(error)")
             }
-            
-            // Refresh Token 삭제
-            group.enter()
-            SecureTokenManager.shared.deleteToken(forKey: SecureKey.REFRESH_TOKEN) { result in
-                switch result {
-                case .success:
-                    print("✅ Refresh Token 삭제 완료")
-                case .failure(let error):
-                    print("❌ Refresh Token 삭제 실패: \(error)")
-                }
-                group.leave()
-            }
-            
-            // 백그라운드에서 완료 대기
-            group.wait()
-            print("✅ 키체인 토큰 초기화 완료")
         }
     }
 }

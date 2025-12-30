@@ -68,12 +68,13 @@ struct BridgeWebView: UIViewRepresentable {
         // MARK: - 출석 버튼 클릭 처리
         private func handleAttendanceButtonClick(webView: WKWebView?) {
             print("🔵 BridgeWebView: 출석 버튼 클릭 처리")
-            
-            SecureTokenManager.shared.retrieveAndDecryptToken(forKey: SecureKey.ACCESS_TOKEN) { result in
-                switch result {
-                case .success(let success):
-                    DispatchQueue.main.async {
-                        webView?.evaluateJavaScript("requestAttendance('\(success)')") { result, error in
+
+            Task {
+                do {
+                    let token = try await TokenManager.shared.retrieve(forKey: SecureKey.ACCESS_TOKEN)
+
+                    await MainActor.run {
+                        webView?.evaluateJavaScript("requestAttendance('\(token)')") { result, error in
                             if let error {
                                 print("❌ BridgeWebView: JavaScript 실행 실패 - \(error)")
                             } else {
@@ -81,8 +82,8 @@ struct BridgeWebView: UIViewRepresentable {
                             }
                         }
                     }
-                case .failure(let failure):
-                    print(failure)
+                } catch {
+                    print("❌ BridgeWebView: 토큰 조회 실패 - \(error)")
                 }
             }
         }

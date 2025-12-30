@@ -137,7 +137,9 @@ final class AppCoordinator: CoordinatorProtocol {
             UserDefaultsManager.userProfile = nil
 
             // 토큰 캐시 초기화
-            SecureTokenManager.shared.clearTokenCache()
+            Task {
+                await TokenManager.shared.clearCache()
+            }
 
             // 로그인 화면으로 이동
             current = .signIn
@@ -262,19 +264,14 @@ struct AppCoordinatorView: View {
                 }
 
                 // 토큰 존재 여부 사전 확인
-                await withCheckedContinuation { continuation in
-                    SecureTokenManager.shared.checkTokenExists(forKey: SecureKey.ACCESS_TOKEN) { exists in
-                        print("🔍 [AppCoordinator] ACCESS_TOKEN 존재 여부: \(exists)")
-                        if !exists {
-                            print("❌ [AppCoordinator] 토큰이 없어서 자동로그인 건너뛰기")
-                            UserDefaultsManager.userId = nil
-                            coordinator.failedLogin()
-                            continuation.resume()
-                            return
-                        }
-                        continuation.resume()
-                    }
+                let tokenExists = await TokenManager.shared.exists(forKey: SecureKey.ACCESS_TOKEN)
+                if !tokenExists {
+                    print("❌ [AppCoordinator] 토큰이 없어서 자동로그인 건너뛰기")
+                    UserDefaultsManager.userId = nil
+                    coordinator.failedLogin()
+                    return
                 }
+                print("🔍 [AppCoordinator] ACCESS_TOKEN 존재 확인")
 
                 do {
                     let userProfile = try await coordinator.diContainer.userRepository.profile()

@@ -20,15 +20,16 @@ final class SocketService: ObservableObject {
     
     func connect(_ roomId: String) {
         guard !isConnected else { return }
-        
-        SecureTokenManager.shared.retrieveAndDecryptToken(forKey: SecureKey.ACCESS_TOKEN) { [weak self] result in
+
+        Task { [weak self] in
             guard let self else { return }
-            switch result {
-            case .success(let success):
-                accessToken = success
+
+            do {
+                let token = try await TokenManager.shared.retrieve(forKey: SecureKey.ACCESS_TOKEN)
+                accessToken = token
                 setupSocketConnection(roomId)
-            case .failure(let failure):
-                print(failure)
+            } catch {
+                print("❌ [SocketService] 토큰 조회 실패: \(error)")
             }
         }
     }
